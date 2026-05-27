@@ -1,7 +1,6 @@
-# WellSense AIoT Hackathon — Hardware Specifications
+# Arduino Nano Runner Cheststrap — Hardware Specifications
 
 All hardware specs sourced from official datasheets.
-Each subteam receives one identical set of all devices listed below.
 
 ---
 

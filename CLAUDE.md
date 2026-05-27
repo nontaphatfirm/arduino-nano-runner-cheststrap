@@ -1,91 +1,94 @@
-# WellSense AIoT Hackathon — Project Context
+# Arduino Nano Runner Cheststrap — Project Context
 
 ## Overview
 
-**Hackathon:** WellSense AIoT & System Product Hackathon (Super AI Engineer Season 6, On-Site Week 3)  
-**Deadline:** Fri May 29, 2026 — slides submitted 09:00, demo setup 09:00–10:00  
-**Story:** Nat (post car-accident patient) recovers at home with cat Mango — 3 subteams form one closed ecosystem  
-**Hardware sets:** 3 sets (one per subteam), each identical in components
+A wearable chest-mounted sensor system for runner form analysis.  
+The **Arduino Nano 33 BLE Sense Rev1** streams 9-axis IMU data and analog sound at 20 Hz over USB Serial to a Web Serial dashboard.
 
-See `HARDWARE.md` for all sensor specs, wiring, sampling rates, limitations, and architecture diagrams.  
-See `pet-care-hardware-guide.md` for a beginner-friendly walkthrough of the Smart Pet Care hardware.
+See `HARDWARE.md` for all sensor specs, wiring, sampling rates, limitations, and I²C addresses.  
+See `hardware-guide.md` for a beginner-friendly walkthrough of the hardware.
 
 ---
 
-## The Three Subteams
-
-| Subteam | Product | Our role in the story |
-|---------|---------|----------------------|
-| **Smart Pet Care** ← us | Monitor Mango (cat) at home | Nat checks on Mango remotely while in rehab |
-| Smart Pillbox | Medication adherence tracking | Reminds Nat to take pills on schedule |
-| Smart Gait Aid | Walker/cane movement quality | Guides Nat's rehab gait safely |
-
-All three share a dashboard — peace of mind from one screen.
-
----
-
-## Smart Pet Care — What We're Monitoring
+## What We're Measuring
 
 | Signal | Sensor | Insight |
 |--------|--------|---------|
-| Food bowl level | Modulino DISTANCE | Is Mango hungry? |
-| Room temperature | Modulino THERMO | Is the room safe for a cat? |
-| Cat activity | Modulino MOVEMENT | Is Mango active or unusually still? |
-| Visual check | Phone camera (WiFi) | Quick snapshot on demand |
-
-**Outputs:** Modulino PIXELS (status beacon) + Modulino BUZZER (heat alert) + WiFi dashboard
-
----
-
-## System Flow (Judging Requirement)
-
-```
-Input → Processing → State → Dashboard → Feedback
-```
-
-| Step | Our implementation |
-|------|--------------------|
-| Input | DISTANCE + THERMO + MOVEMENT sensors |
-| Processing | UNO Q fuses readings, applies thresholds |
-| State | ALL_OK / HUNGRY / TOO_HOT / INACTIVE_WARNING |
-| Dashboard | Live sensor values + state on browser/phone |
-| Feedback | PIXELS color + BUZZER tone react to state |
+| Acceleration (XYZ) | LSM9DS1 (built-in IMU) | Impact, vertical oscillation, trunk lean |
+| Rotation rate (XYZ) | LSM9DS1 gyroscope | Roll, pitch, yaw / cadence |
+| Magnetic heading | LSM9DS1 magnetometer | Absolute orientation reference |
+| Sound | OJFF14 analog sensor → A7 | Ambient noise, step rhythm |
+| Visual capture | OV7675 (Tiny ML Shield) | Keyframe image on demand |
 
 ---
 
-## Judging Rubric
+## System Flow
 
-| Criterion | Points | How we satisfy it |
-|-----------|--------|-------------------|
-| Problem & User Value | 15 | Nat's anxiety about Mango anchors every sensor choice |
-| System Architecture & HW Use | 20 | UNO Q + Qwiic chain + WiFi dashboard (see HARDWARE.md) |
-| Multi-Sensor Insight & AI Logic | 20 | 3 sensors → 4 states with threshold logic |
-| Dashboard & Feedback Interaction | 15 | Live values + PIXELS/BUZZER react to state |
-| Prototype Quality & Low-Power | 15 | Modulino plug-and-play, calibrated sensors |
-| Business Canvas, Demo & Storytelling | 15 | Nat/Mango story + 3-min demo |
+```
+Input → Processing → Dashboard → Feedback
+```
 
-**Safe language:** wellness cue, behavior awareness, self-monitoring, support/reminder/guide  
-**Avoid:** diagnosis, treatment, medical decision, stress detection as fact
+| Step | Implementation |
+|------|----------------|
+| Input | LSM9DS1 (accel + gyro + mag) + OJFF14 sound → Nano 33 BLE Sense |
+| Processing | Dead-reckoning: accel → velocity → position; step peaks → cadence |
+| Dashboard | Live charts, 3D position, orientation, sound level via Web Serial |
+| Feedback | Visual cues in dashboard (lean alert, bounce threshold) |
+
+---
+
+## Available Hardware (Arduino Plug and Make Kit)
+
+These Modulino modules connect to **Arduino UNO Q** via Qwiic (`Wire1`):
+
+| Module | I²C Address | Function |
+|--------|-------------|----------|
+| DISTANCE | 0x29 | ToF laser range: 0–1200 mm |
+| THERMO | 0x44 | Temperature ±0.25°C / Humidity ±2.8% |
+| MOVEMENT | 0x6A | 6-axis IMU (LSM6DSOXTR) |
+| PIXELS | 0x6C | 8× RGB LEDs |
+| BUZZER | 0x3C | Passive buzzer 31–4186 Hz |
+| KNOB | 0x76 | Rotary encoder |
+| BUTTONS | 0x7C | 3× tactile buttons |
+
+Always use the **Modulino Library Address** in code (not the hardware scan address).
 
 ---
 
 ## Library Dependencies
 
 ```
-Arduino_Modulino  v0.7.0   — all Modulino modules
-MsgPack           v0.4.2   — required by Modulino
-Arduino_RouterBridge       — Monitor.print on UNO Q
-WiFi (built-in)            — UNO Q WiFi dashboard
+Arduino_LSM9DS1              — Nano 33 BLE Sense Rev1 IMU (Rev2: Arduino_BMI270_BMM150)
+Arduino_Modulino  v0.7.0    — all Modulino modules (UNO Q)
+MsgPack           v0.4.2    — required by Modulino
+Arduino_RouterBridge         — Monitor.print on UNO Q
+WiFi (built-in)              — UNO Q WiFi
 ```
 
 ---
 
-## Hackathon Timeline
+## Main Code
 
-| Date | Event |
-|------|-------|
-| Sun May 24 | Team names submitted by 20:00 |
-| Mon May 25 | Office hour 13:30, check-in 20:30 |
-| Tue May 26 | Topic names 10:00, Med team office hours 13:00 |
-| Thu May 28 | Technical consultation (UNO Q) 09:00–16:30 |
-| **Fri May 29** | **Submit slides 09:00 · Demo setup 09:00–10:00 · No edits after setup** |
+```
+sensors-test/
+├── sensors_test/
+│   └── sensors_test.ino   ← primary sketch — streams JSON at 20 Hz
+└── dashboard.html          ← Web Serial dashboard (Chrome / Edge)
+```
+
+Sketch targets **Rev1** by default (`SENSOR_BOARD_REV 1`).  
+Set to `2` and install `Arduino_BMI270_BMM150` for Rev2.
+
+---
+
+## Board Identification
+
+| Property | Value |
+|----------|-------|
+| SKU | ABX00031 |
+| USB idVendor | 0x2341 (Arduino) |
+| USB idProduct | 0x805A |
+| USB bcdDevice | 0x0101 (Rev1) |
+| Processor | nRF52480 Cortex-M4F @ 64 MHz |
+| Flash / RAM | 1 MB / 256 KB |
+| I/O voltage | 3.3V only — NOT 5V tolerant |

@@ -1,34 +1,43 @@
-# Hardware Reference — Smart Pet Care
+# Hardware Reference — Arduino Nano Runner Cheststrap
 
-All sensor specs, wiring diagrams, sampling rates, noise characteristics, and I2C addresses.  
-For context on how other subteams use their hardware, see the ecosystem overview at the bottom.
+All sensor specs, wiring diagrams, sampling rates, noise characteristics, and I²C addresses.
 
 > **Datasheet sources:** `hardware/UnoQ/ABX00162-ABX00173-datasheet.pdf` and `hardware/PlugandMakeKit/AKX00069-datasheet.pdf`
 
 ---
 
-## Our Hardware Stack
+## Hardware Stack
 
 ```
-Arduino UNO Q  (main hub)
+Arduino Nano 33 BLE Sense Rev1  (primary — chest-mounted)
     │
-    ├── [Qwiic daisy-chain] ─────────────────────────────────────────────────┐
-    │       Modulino DISTANCE  (0x29)  ← food bowl level (ToF laser)         │
-    │       Modulino THERMO    (0x44)  ← room temperature + humidity          │
-    │       Modulino MOVEMENT  (0x6A)  ← cat activity detection (IMU)         │
-    │       Modulino PIXELS    (0x6C)  ← status beacon (8x RGB LED)           │
-    │       Modulino BUZZER    (0x3C)  ← temperature alert (audio)            │
-    │                                                                         │
-    ├── [WiFi] ── Phone camera app (HTTP snapshot) ──────────────────────────┘
+    ├── LSM9DS1  (built-in 9-axis IMU)  ← accel + gyro + mag → motion analysis
+    ├── MP34DT05 (built-in MEMS mic)    ← optional audio
+    ├── APDS-9960 (built-in gesture)    ← optional proximity / light
     │
-    └── [WiFi] ── HTTP Dashboard → Nat's phone/laptop
+    ├── [A7 analog pin] ─────────────── OJFF14 sound sensor
+    │
+    └── [Tiny ML Shield] ─────────────── OV7675 camera
+
+Arduino UNO Q  (secondary hub — optional dashboard/Qwiic expansion)
+    │
+    ├── [Qwiic daisy-chain / Wire1] ──────────────────────────────────┐
+    │       Modulino DISTANCE  (0x29)  ← range sensing (ToF laser)   │
+    │       Modulino THERMO    (0x44)  ← temperature + humidity       │
+    │       Modulino MOVEMENT  (0x6A)  ← motion detection (6-axis IMU)│
+    │       Modulino PIXELS    (0x6C)  ← 8× RGB status LEDs           │
+    │       Modulino BUZZER    (0x3C)  ← audio feedback               │
+    │       Modulino KNOB      (0x76)  ← rotary input                 │
+    │       Modulino BUTTONS   (0x7C)  ← 3× tactile buttons           │
+    │                                                                  │
+    └── [WiFi] ── HTTP Dashboard → browser                            │
 ```
 
 ---
 
-## Arduino UNO Q — Board Specs (from datasheet)
+## Arduino UNO Q — Board Specs
 
-The UNO Q is **not** a simple microcontroller. It has two separate processors on one board:
+The UNO Q has two separate processors on one board:
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -50,9 +59,9 @@ The UNO Q is **not** a simple microcontroller. It has two separate processors on
 └─────────────────────────────────────────────────────┘
 ```
 
-**Think of it this way:** The MPU is like a tiny laptop running Linux. The MCU is like a normal Arduino. They talk to each other internally. When you upload a sketch via Arduino IDE, it goes to the MCU.
+The MPU runs Linux; the MCU runs the Arduino sketch. Arduino IDE uploads to the MCU.
 
-### Power specs (from datasheet)
+### Power specs
 
 | Parameter | Min | Typical | Max |
 |-----------|-----|---------|-----|
@@ -61,7 +70,7 @@ The UNO Q is **not** a simple microcontroller. It has two separate processors on
 | 3.3V rail output | 3.1V | 3.3V | 3.5V |
 | Operating temperature | −10°C | — | 60°C |
 
-### Key I2C note for Qwiic
+### I2C / Qwiic note
 
 | Property | Value |
 |----------|-------|
@@ -71,7 +80,6 @@ The UNO Q is **not** a simple microcontroller. It has two separate processors on
 | Max cable per segment | 1.2 m |
 
 ```cpp
-// Required in every sketch that uses Modulino:
 #include "Arduino_Modulino.h"
 Modulino.begin();   // initializes Qwiic/I2C on Wire1
 ```
@@ -89,9 +97,9 @@ UNO Q [Qwiic] ──cable──> DISTANCE [Qwiic out] ──cable──> THERMO 
 
 **Rules:**
 - Order in chain doesn't matter — all share one I2C bus
-- Each module has a unique I2C address — no conflict in our set
+- Each module has a unique I2C address — no conflict
 - Polarized connector — cannot plug in backwards
-- Max 1.2 m per cable segment; use shorter cables when possible
+- Max 1.2 m per cable segment
 
 **Cable color code:**
 
@@ -106,44 +114,35 @@ UNO Q [Qwiic] ──cable──> DISTANCE [Qwiic out] ──cable──> THERMO 
 
 ## I2C Address Reference
 
-There are **two** address types per module. Always use the **Modulino library address** in code:
+Always use the **Modulino library address** in code — not the hardware scan address:
 
-| Module | Chip / Actuator | Modulino Library Addr | Hardware Addr (I2C scan) | Used by us |
-|--------|----------------|----------------------|--------------------------|-----------|
-| DISTANCE | VL53L4CDV0DH/1 | **0x29** | 0x29 | Yes — food bowl |
-| THERMO | HS3003 | **0x44** | 0x44 | Yes — room climate |
-| MOVEMENT | LSM6DSOXTR | **0x6A** | 0x6A (alt 0x7E via jumper) | Yes — cat activity |
-| PIXELS | 8× LC8822-2020 | **0x6C** | 0x36 | Yes — status beacon |
-| BUZZER | PKLCS1212E4001 | **0x3C** | 0x1E | Yes — heat alert |
-| KNOB | PEC11J-9215F-S0015 | **0x76** | 0x3A | In kit, not used |
-| BUTTONS | 3× SPST | **0x7C** | 0x3E | In kit, not used |
+| Module | Chip / Actuator | Modulino Library Addr | Hardware Addr (I2C scan) |
+|--------|----------------|----------------------|--------------------------|
+| DISTANCE | VL53L4CDV0DH/1 | **0x29** | 0x29 |
+| THERMO | HS3003 | **0x44** | 0x44 |
+| MOVEMENT | LSM6DSOXTR | **0x6A** | 0x6A (alt 0x7E via jumper) |
+| PIXELS | 8× LC8822-2020 | **0x6C** | 0x36 |
+| BUZZER | PKLCS1212E4001 | **0x3C** | 0x1E |
+| KNOB | PEC11J-9215F-S0015 | **0x76** | 0x3A |
+| BUTTONS | 3× SPST | **0x7C** | 0x3E |
 
-**Why two addresses?** The Modulino board has its own microcontroller (STM32C011F4) that bridges between I2C and the sensor chip. The library talks to the STM32, which talks to the sensor. So you always use the Modulino address in your code, not the chip's native address.
+**Why two addresses?** The Modulino board has its own microcontroller (STM32C011F4) that bridges between I2C and the sensor chip. The library talks to the STM32, which talks to the sensor.
 
-**Note on MOVEMENT address:** If you ever need two MOVEMENT modules on the same bus (not our case), cut the 0x6A hardware jumper and short 0x6B on the second one. Never short both simultaneously — will damage the board.
+**Note on MOVEMENT address:** If you need two MOVEMENT modules on the same bus, cut the 0x6A hardware jumper and short 0x6B on the second one. Never short both simultaneously.
 
 ---
 
 ## Sensor 1: Modulino DISTANCE
 
-**Job:** Measure food bowl fill level.  
-**Chip:** VL53L4CDV0DH/1 (Time-of-Flight laser ranging)  
+**Job:** Time-of-flight range measurement (0–1200 mm).  
+**Chip:** VL53L4CDV0DH/1 (ToF laser ranging)  
 **Modulino I2C Address:** 0x29
 
 ### How it works
 
-Shoots an invisible laser downward, measures how long it takes to bounce back. Mounted above the bowl:
+Shoots an invisible laser, measures round-trip time. Returns distance in mm.
 
-```
-  [DISTANCE sensor] — mounted above bowl, pointing straight down
-        │ laser
-        ↓
-  ══════════════  ← food surface   (near = bowl full, e.g., 3 cm)
-  ~~food~~~~~~~~
-  ══════════════  ← bowl bottom    (far = bowl empty, e.g., 15 cm)
-```
-
-### Key specs (from datasheet)
+### Key specs
 
 | Property | Value |
 |----------|-------|
@@ -156,26 +155,22 @@ Shoots an invisible laser downward, measures how long it takes to bounce back. M
 | Communication | I2C |
 | Sampling rate | ~10 Hz (`delay(100)`) |
 
-**Accuracy note:** ±7mm = ±0.7cm at close distances. At 100cm, ±3% = ±3cm. For our bowl (3–15cm range), expect ±0.7–1cm accuracy — more than enough for fill level.
+### Noise & limitations
 
-### Sensor noise & limitations
+- **Surface reflectivity:** Dark or matte surfaces absorb the laser → reads slightly farther. Calibrate with your actual target surface.
+- **Angle:** Must point perpendicular to the target surface.
+- **Sunlight:** Strong ambient IR can saturate the sensor. Keep away from direct sunlight.
 
-- **Surface reflectivity:** Dark or matte surfaces absorb the laser → reads slightly farther than reality. Prefer a light-colored bowl or calibrate with your actual bowl.
-- **Angle:** Must point perpendicular to the food surface. Angled mount = inaccurate reading.
-- **Sunlight:** Strong ambient IR (outdoor sun near a window) can saturate the sensor. Keep indoors away from direct sunlight.
-- **Line-of-sight only:** Cannot measure through the bowl wall.
-
-### Bowl fill calculation
+### Range measurement
 
 ```cpp
-// Calibrate these with your actual bowl:
-const int BOWL_EMPTY_CM = 15;  // sensor reading when bowl is empty
-const int BOWL_FULL_CM  = 3;   // sensor reading when bowl is full
+// Calibrate EMPTY and FULL distances for your application:
+const int RANGE_FAR_MM  = 1200;  // maximum / empty
+const int RANGE_NEAR_MM = 30;    // minimum / full
 
-int fill_pct = (BOWL_EMPTY_CM - measured_cm) * 100
-               / (BOWL_EMPTY_CM - BOWL_FULL_CM);
-fill_pct = constrain(fill_pct, 0, 100);
-// 0% = empty, 100% = full
+int pct = (RANGE_FAR_MM - measured_mm) * 100
+          / (RANGE_FAR_MM - RANGE_NEAR_MM);
+pct = constrain(pct, 0, 100);
 ```
 
 ### Functions
@@ -184,8 +179,8 @@ fill_pct = constrain(fill_pct, 0, 100);
 ModulinoDistance distance;
 distance.begin();
 
-if (distance.available()) {   // true when new reading ready
-    int cm = distance.get();  // returns cm as int
+if (distance.available()) {
+    int cm = distance.get();
 }
 ```
 
@@ -193,11 +188,11 @@ if (distance.available()) {   // true when new reading ready
 
 ## Sensor 2: Modulino THERMO
 
-**Job:** Monitor room temperature and humidity for cat comfort.  
+**Job:** Measure ambient temperature and humidity.  
 **Chip:** HS3003 (capacitive humidity + resistive temperature)  
 **Modulino I2C Address:** 0x44
 
-### Key specs (from datasheet)
+### Key specs
 
 | Property | Value |
 |----------|-------|
@@ -210,23 +205,13 @@ if (distance.available()) {   // true when new reading ready
 | Humidity accuracy | **±2.8% RH** |
 | Resolution | 14-bit for both temperature and humidity |
 | Communication | I2C |
-| Sampling rate | max ~2 Hz; use `delay(1000)` = 1 Hz in our sketch |
+| Sampling rate | max ~2 Hz; use `delay(1000)` = 1 Hz |
 
-### Sensor noise & limitations
+### Noise & limitations
 
-- **Slow thermal mass:** If you carry the sensor from a cold room to a hot room, it takes 1–2 minutes to stabilize. Normal behavior. Not suitable for detecting sudden heat bursts (stove turning on).
-- **Self-heating:** Electronics near the sensor (including the UNO Q board itself) radiate heat and can read +1–2°C too high if the sensor is enclosed. Place it in open air, away from the board.
-- **Humidity stabilization:** After being in a new environment, humidity reading takes 5–10 min to stabilize.
-- **Best placement:** Open air at cat height (~30 cm off floor), away from electronics and walls.
-
-### Cat comfort thresholds
-
-| State | Temperature |
-|-------|------------|
-| Too cold | < 15°C |
-| Comfortable | 18–26°C |
-| Warm — watch | 26–30°C |
-| Too hot — alert | > 30°C |
+- **Slow thermal mass:** Takes 1–2 minutes to stabilize after moving between environments.
+- **Self-heating:** Electronics near the sensor can read +1–2°C too high. Place in open air, away from the board.
+- **Humidity stabilization:** Takes 5–10 min in a new environment.
 
 ### Functions
 
@@ -242,11 +227,11 @@ float hum  = thermo.getHumidity();    // %
 
 ## Sensor 3: Modulino MOVEMENT
 
-**Job:** Detect cat activity — is Mango moving around, or has she been still for too long?  
-**Chip:** LSM6DSOXTR (6-axis IMU: 3-axis accelerometer + 3-axis gyroscope)  
+**Job:** Detect motion and orientation via 6-axis IMU.  
+**Chip:** LSM6DSOXTR (3-axis accelerometer + 3-axis gyroscope)  
 **Modulino I2C Address:** 0x6A
 
-### Key specs (from datasheet)
+### Key specs
 
 | Property | Value |
 |----------|-------|
@@ -259,29 +244,25 @@ float hum  = thermo.getHumidity();    // %
 | Gyroscope range | ±125 / ±250 / ±500 / ±1000 / ±2000 dps (selectable) |
 | Gyroscope resolution | 4.375 mdps/LSB (±125dps) to 70 mdps/LSB (±2000dps) |
 | Gyroscope accuracy | **±1 dps** (zero-rate offset) |
-| Output | Accel in **g**, Gyro in **dps** (degrees/second) |
+| Output | Accel in **g**, Gyro in **dps** |
 | Hardware max sample rate | 6664 Hz |
 | Practical sampling rate | ~5 Hz at `delay(200)`, ~20 Hz at `delay(50)` |
 
-**What ±20 mg accuracy means:** At rest, the accelerometer may read up to 0.02g away from the true value. This is why calibration is mandatory — you measure the resting baseline and subtract it.
-
 ### Sensor noise & calibration — CRITICAL
 
-At rest, the sensor does **not** read exactly zero:
+At rest, the sensor does **not** read zero:
 
 ```
 Raw at rest:    X = 0.12,  Y = -0.08,  Z = 9.65
 Expected:       X = 0,     Y = 0,      Z = 9.81  (gravity)
 ```
 
-Sources of offset: factory bias (up to ±20 mg), temperature, tiny physical tilt, ambient vibration.
+**Without calibration:** false motion detected constantly; Roll/Pitch/Yaw drifts.
 
-**Without calibration:** the system will falsely report constant motion even when nothing moves, and Roll/Pitch/Yaw will slowly drift.
-
-**Calibration routine** (run once in `setup()`, takes ~1 second):
+**Calibration routine:**
 
 ```cpp
-float baseX, baseY, baseZ;  // global baselines
+float baseX, baseY, baseZ;
 
 void calibrateSensor() {
     float sumX = 0, sumY = 0, sumZ = 0;
@@ -305,23 +286,13 @@ void calibrateSensor() {
 movement.update();
 float dx = abs(movement.getX() - baseX);
 float dy = abs(movement.getY() - baseY);
-bool catMoved = (dx > 0.15 || dy > 0.15);   // 0.15g threshold
-```
-
-### Placement strategy for pet tracking
-
-Mount on a surface the cat interacts with (feeding mat, shelf edge, door frame nearby). Vibration from cat footsteps or the cat brushing past will exceed the threshold.
-
-```
-Cat walks past sensor zone → vibration → deltaX or deltaY > 0.15g → activity logged
-Cat inactive for 60+ minutes → INACTIVE_WARNING state
+bool hasMoved = (dx > 0.15 || dy > 0.15);   // 0.15g threshold
 ```
 
 ### Limitations
 
-- **Detects vibration/movement near the sensor, not the cat's location.** Cannot track where the cat is — only whether there was motion in the sensor's vicinity.
-- **Gyro drift:** Roll/Pitch/Yaw values drift over time even when still. For pet activity, use only accelerometer (getX/Y/Z) — avoid gyro readings.
-- **Building vibration:** AC units, footsteps in the building, or doors closing can trigger false positives. Tune threshold based on your environment.
+- **Gyro drift:** Roll/Pitch/Yaw values drift over time even when still.
+- **Building vibration:** AC units, doors closing can trigger false positives. Tune threshold to your environment.
 - **No magnetometer** on this module — no absolute orientation.
 
 ### Functions
@@ -334,42 +305,33 @@ movement.update();          // MUST call before reading
 movement.getX();            // accel X in g
 movement.getY();            // accel Y in g
 movement.getZ();            // accel Z in g (≈1.0 at rest, flat)
-movement.getRoll();         // gyro roll in dps  — avoid for pet tracking
-movement.getPitch();        // gyro pitch in dps — avoid for pet tracking
-movement.getYaw();          // gyro yaw in dps   — avoid for pet tracking
+movement.getRoll();         // gyro roll in dps
+movement.getPitch();        // gyro pitch in dps
+movement.getYaw();          // gyro yaw in dps
 ```
 
 ---
 
 ## Output 1: Modulino PIXELS
 
-**Job:** Status beacon — visible color indicator of Mango's current state.  
+**Job:** Visual status indicator (8 individually addressable RGB LEDs).  
 **Chip:** STM32C011F4 + 8× LC8822-2020 RGB LEDs  
 **Modulino I2C Address:** 0x6C
 
-### Key specs (from datasheet)
+### Key specs
 
 | Property | Value |
 |----------|-------|
 | LEDs | 8 individually addressable RGB (LC8822-2020) |
 | Microcontroller | STM32C011F4 |
 | Supply voltage | 2.0V min, 3.6V max |
-| Power consumption | **33 mA per LED @ 3.3V** (×8 LEDs) + 3.4 mA MCU = up to **267 mA max** (all LEDs full white) |
+| Power consumption | **33 mA per LED @ 3.3V** (×8) + 3.4 mA MCU = up to **267 mA max** (all LEDs full white) |
 | LED index | 0–7 |
 | Colors (library) | RED, GREEN, BLUE, VIOLET, WHITE |
 | Brightness | 0 (off) to 255 (max), 8-bit per channel |
 | Communication | I2C |
 
-**Power note:** All 8 LEDs at full brightness can draw up to ~267 mA. Keep brightness ≤ 80 (out of 255) unless you need it very bright — this keeps power draw comfortable.
-
-### State → color mapping (our scheme)
-
-| State | Color | Meaning |
-|-------|-------|---------|
-| ALL_OK | GREEN | Mango is fine |
-| HUNGRY | VIOLET | Bowl below 30% |
-| TOO_HOT | RED | Room above 30°C |
-| INACTIVE_WARNING | BLUE | No movement for 60+ min |
+**Power note:** Keep brightness ≤ 80 out of 255 for normal operation to limit draw to ~100 mA.
 
 ### Functions
 
@@ -381,7 +343,7 @@ leds.set(0, GREEN, 50);   // index, color, brightness
 leds.show();              // REQUIRED — nothing displays until show() is called
 ```
 
-**Common mistake:** Calling `leds.set()` but forgetting `leds.show()`. Nothing will change on the hardware without `show()`.
+**Common mistake:** Calling `leds.set()` but forgetting `leds.show()`.
 
 ### Set all 8 to one color
 
@@ -398,12 +360,11 @@ void setAllColor(uint8_t color, uint8_t brightness) {
 
 ## Output 2: Modulino BUZZER
 
-**Job:** Audio alert when room temperature is dangerously high.  
+**Job:** Audio feedback / alerts.  
 **Chip:** STM32C011F4 + passive buzzer (PKLCS1212E4001)  
-**Modulino I2C Address:** 0x3C  
-**Hardware I2C Address (for reference only):** 0x1E
+**Modulino I2C Address:** 0x3C
 
-### Key specs (from datasheet)
+### Key specs
 
 | Property | Value |
 |----------|-------|
@@ -411,27 +372,21 @@ void setAllColor(uint8_t color, uint8_t brightness) {
 | Microcontroller | STM32C011F4 |
 | Supply voltage | 2.0V min, 3.6V max |
 | Power consumption | **6.4 mA** |
-| ADC resolution | 12-bit (±2 LSB typical INL) |
 | Frequency range | NOTE_B0 (31 Hz) to NOTE_C8 (4186 Hz) |
 | Duration control | Milliseconds |
-| Stop | `tone(0, 10)` |
 | Volume | Fixed (no amplitude control) |
 | Polyphony | Single tone only |
 | Communication | I2C |
 
-### Alert pattern for heat warning
+### Usage
 
 ```cpp
 ModulinoBuzzer buzzer;
 buzzer.begin();
 
-void heatAlert() {
-    for (int i = 0; i < 3; i++) {
-        buzzer.tone(880, 300);   // 880 Hz = high urgency
-        delay(500);
-    }
-    buzzer.tone(0, 10);          // stop
-}
+buzzer.tone(880, 300);   // 880 Hz for 300 ms
+delay(500);
+buzzer.tone(0, 10);      // stop
 ```
 
 ### Useful frequencies
@@ -446,136 +401,195 @@ void heatAlert() {
 
 - One tone at a time — no chord
 - Volume is fixed — may be inaudible in noisy spaces
-- Avoid running `buzzer.tone()` too frequently — let it finish before calling again
+- Avoid calling `buzzer.tone()` too rapidly
 
 ---
 
-## Architecture Diagram — Smart Pet Care
+## Input: Modulino KNOB
 
+**Chip:** STM32C011F4 + Quadrature Rotary Encoder  
+**Modulino I2C Address:** 0x76
+
+```cpp
+ModulinoKnob knob;
+knob.begin();
+
+int pos  = knob.get();     // position (increments/decrements on rotate)
+bool btn = knob.isPressed(); // true when knob is pressed
 ```
-┌────────────────────────────────────────────────────────────────┐
-│  SMART PET CARE — HARDWARE ARCHITECTURE                        │
-│                                                                │
-│  Arduino UNO Q                                                 │
-│  │                                                             │
-│  ├── [Qwiic I2C4 / Wire1]                                      │
-│  │       │                                                     │
-│  │       ├── DISTANCE (0x29)  ←  above food bowl, down-facing  │
-│  │       │       └── int cm = distance.get()                   │
-│  │       │           → fill_pct calculation                    │
-│  │       │                                                     │
-│  │       ├── THERMO (0x44)    ←  open air at cat height        │
-│  │       │       └── float temp = thermo.getTemperature()      │
-│  │       │           float hum  = thermo.getHumidity()         │
-│  │       │                                                     │
-│  │       ├── MOVEMENT (0x6A)  ←  near cat activity zone        │
-│  │       │       └── movement.update(); getX(), getY()         │
-│  │       │           → delta vs calibrated baseline            │
-│  │       │                                                     │
-│  │       ├── PIXELS (0x6C)    →  visible status beacon         │
-│  │       │       └── leds.set(i, color, brightness); show()    │
-│  │       │                                                     │
-│  │       └── BUZZER (0x3C)    →  heat alert tone               │
-│  │               └── buzzer.tone(880, 300)                     │
-│  │                                                             │
-│  ├── [WiFi Client] ←── Smartphone IP camera app               │
-│  │       └── HTTP GET http://<phone_ip>/shot.jpg               │
-│  │           → snapshot on dashboard                           │
-│  │                                                             │
-│  └── [WiFi AP/Server] ──→ HTTP Dashboard                       │
-│          └── Nat's phone/laptop browser                        │
-│              shows: bowl%, temp°C, activity, state, snapshot   │
-└────────────────────────────────────────────────────────────────┘
-```
-
-### Signal flow
-
-```
-DISTANCE (bowl cm)
-THERMO   (temp °C, humidity %)       →  UNO Q processes  →  State
-MOVEMENT (deltaX, deltaY vs baseline)                          │
-                                                               ↓
-                                                    ALL_OK / HUNGRY / TOO_HOT / INACTIVE
-                                                               │
-                                              ┌────────────────┴──────────────────┐
-                                              ↓                                   ↓
-                                    PIXELS + BUZZER                         Dashboard
-                                    (on-device feedback)               (remote, Nat's phone)
-```
-
-### State logic
-
-| State | Condition | PIXELS | BUZZER |
-|-------|-----------|--------|--------|
-| ALL_OK | temp 15–30°C AND bowl ≥ 30% AND active | GREEN | silent |
-| HUNGRY | bowl < 30% | VIOLET | silent |
-| TOO_HOT | temp > 30°C | RED | 3x 880Hz beep |
-| INACTIVE | no movement > 60 min | BLUE | silent |
-
-Priority: TOO_HOT > HUNGRY > INACTIVE > ALL_OK
 
 ---
 
-## Camera via WiFi
+## Input: Modulino BUTTONS
 
-No direct USB camera connection is allowed. Use a smartphone IP camera app:
+**Chip:** STM32C011F4 + 3× SPST push buttons + 3× LEDs  
+**Modulino I2C Address:** 0x7C
 
+```cpp
+ModulinoButtons buttons;
+buttons.begin();
+
+buttons.update();                  // MUST call before reading
+bool a = buttons.isPressed(0);    // button A
+bool b = buttons.isPressed(1);    // button B
+bool c = buttons.isPressed(2);    // button C
 ```
-Smartphone
-  → install "IP Webcam" (Android) or "EpocCam" (iOS)
-  → connect to same WiFi as UNO Q
-  → app exposes: http://<phone_ip>:8080/shot.jpg
-
-UNO Q
-  → HTTP GET http://<phone_ip>:8080/shot.jpg
-  → embed image URL in dashboard HTML
-  → browser auto-refreshes the <img> tag
-```
-
-This gives a periodic snapshot (not live stream) — sufficient for welfare checks.
 
 ---
 
-## Critical Limitations for Our Subteam
+## Arduino Nano 33 BLE Sense Rev1 — Built-in Sensors
 
-| Constraint | What it means for us | Workaround |
-|------------|---------------------|------------|
-| MOVEMENT needs calibration | Without it: constant false activity alerts | Always run `calibrateSensor()` in `setup()` |
-| MOVEMENT accel offset ±20 mg | Raw readings always slightly wrong | Baseline subtraction after calibration |
-| THERMO slow response (30–60s) | Can't detect sudden heat spikes | Use for ambient monitoring; alert only on sustained heat |
-| THERMO accuracy ±0.25°C | Small but real error | Fine for our 30°C threshold |
-| DISTANCE line-of-sight only | Can't read through bowl walls | Mount directly above bowl, pointing down |
-| DISTANCE affected by dark surfaces | Dark bowl may read slightly farther | Calibrate `BOWL_EMPTY_CM` and `BOWL_FULL_CM` with your actual bowl |
-| DISTANCE max range 120 cm | Beyond that = no valid reading | Not a problem; bowl is within 20 cm |
+### LSM9DS1 — 9-axis IMU (primary sensor for this project)
+
+```cpp
+#include <Arduino_LSM9DS1.h>
+
+IMU.begin();
+
+float ax, ay, az;
+if (IMU.accelerationAvailable()) IMU.readAcceleration(ax, ay, az);  // g
+
+float gx, gy, gz;
+if (IMU.gyroscopeAvailable())   IMU.readGyroscope(gx, gy, gz);     // dps
+
+float mx, my, mz;
+if (IMU.magneticFieldAvailable()) IMU.readMagneticField(mx, my, mz); // µT
+```
+
+Converted to SI units for downstream integration:
+- Acceleration: `value_g × 9.80665` → m/s²
+- Gyroscope: `value_dps × π/180` → rad/s
+
+| Property | Value |
+|----------|-------|
+| Accelerometer range | ±2 / ±4 / ±8 / ±16 g |
+| Gyroscope range | ±245 / ±500 / ±2000 dps |
+| Magnetometer range | ±4 / ±8 / ±12 / ±16 gauss |
+| Resolution | 16-bit |
+| Power | 2 mA |
+
+### APDS-9960 — Proximity / Light / Gesture
+
+| Property | Value |
+|----------|-------|
+| Functions | Proximity, ambient light, RGB color, gesture |
+| Gestures | UP / DOWN / LEFT / RIGHT |
+| Power | 798 µA |
+
+### MP34DT05 — MEMS Microphone
+
+| Property | Value |
+|----------|-------|
+| SNR | 64 dB |
+| AOP | 122.5 dBSPL |
+| Pattern | Omnidirectional |
+| Power | 650 µA |
+
+### HTS221 — Humidity + Temperature (on-board)
+
+| Property | Value |
+|----------|-------|
+| Humidity range | 0–100% RH, ±3.5% (20–80%) |
+| Temperature accuracy | ±0.5°C (15–40°C) |
+| Power | 2 µA |
+
+### LPS22HB — Barometer
+
+| Property | Value |
+|----------|-------|
+| Pressure range | 260–1260 hPa |
+| Precision | 24-bit |
+| Output rate | 1–75 Hz |
+| Power | 12 µA |
+
+---
+
+## OJFF14 Sound Sensor Wiring
+
+| OJFF14 pin | Nano 33 BLE Sense |
+|------------|-------------------|
+| S | A7 |
+| + | 3V3 |
+| − | GND |
+
+> Nano 33 BLE analog inputs are **not 5V tolerant**. Power OJFF14 from 3.3V directly. If using 5V supply, add a voltage divider or level shifter on the signal line.
+
+Sampling (32 samples, ~4 ms):
+
+```cpp
+const int SOUND_PIN = A7;
+analogReadResolution(12);
+
+int minRaw = 4095, maxRaw = 0;
+long sum = 0;
+for (int i = 0; i < 32; i++) {
+    int v = analogRead(SOUND_PIN);
+    if (v < minRaw) minRaw = v;
+    if (v > maxRaw) maxRaw = v;
+    sum += v;
+    delayMicroseconds(120);
+}
+int soundRaw  = sum / 32;
+int soundPeak = maxRaw - minRaw;              // peak-to-peak amplitude
+float soundLevel = constrain(soundPeak / 900.0f, 0.0f, 1.0f); // normalized 0–1
+```
+
+---
+
+## OV7675 Camera Module
+
+**Interface:** 8-bit parallel DVP + SCCB (I2C-like) config  
+**Mount:** Arduino Tiny Machine Learning Shield
+
+| Property | Value |
+|----------|-------|
+| Active array | 640 × 480 (VGA) |
+| Max frame rate | 30 fps (VGA) / 240 fps (QQVGA 160×120) |
+| Data formats | YUV4:2:2, Raw RGB, RGB565 |
+| Active power | 98 mW |
+| Standby power | 60 µW |
+
+**Practical mode for Nano 33 BLE Sense:** 160×120 greyscale @ 15 fps — reduces data 48× vs RGB VGA.
+
+Pins:
+
+| Pin | Name | Description |
+|-----|------|-------------|
+| 1 | VCC | 3.3V |
+| 5 | VSYNC | Frame sync |
+| 6 | HREF | Line/pixel valid |
+| 7 | PCLK | Pixel clock |
+| 8 | XCLK | Master clock input (must be supplied) |
+| 9–16 | D7–D0 | 8-bit pixel data |
+
+---
+
+## All Modulino Modules — Quick Reference
+
+| Module | Chip | Supply | Power | Accuracy | Resolution |
+|--------|------|--------|-------|----------|------------|
+| DISTANCE | VL53L4CDV0DH/1 | 2.6–3.5V | 40mA peak / 24mA ranging | ±7mm to ±3% | 1mm |
+| THERMO | HS3003 | 2.3–5.5V | 24.4 µA | Temp ±0.25°C / RH ±2.8% | 14-bit |
+| MOVEMENT | LSM6DSOXTR | 1.71–3.6V | 170µA (accel) / 0.55mA (gyro) | ±20 mg / ±1 dps | 0.061mg/LSB |
+| PIXELS | 8× LC8822-2020 | 2.0–3.6V | 33mA×8 + 3.4mA MCU | — | 8-bit/channel |
+| BUZZER | PKLCS1212E4001 | 2.0–3.6V | 6.4 mA | ADC ±2 LSB INL | 12-bit ADC |
+| KNOB | Quadrature encoder | 2.0–3.6V | 3.4 mA | Oscillator ±1% | 12-bit ADC |
+| BUTTONS | 3× SPST | 2.0–3.6V | 2.5mA×3 + 3.4mA | ADC ±2 LSB INL | 12-bit ADC |
+
+---
+
+## Critical Limitations
+
+| Constraint | What it means | Workaround |
+|------------|--------------|------------|
+| LSM9DS1 accel offset | Raw readings always slightly wrong at rest | Wait for `accelerationAvailable()` before streaming; calibrate baseline |
+| Gyro drift | Roll/Pitch/Yaw wander over time | Use `Reset Tracking` in dashboard to recalibrate |
+| MOVEMENT accel offset ±20 mg | Modulino IMU also biased | Run `calibrateSensor()` in `setup()` |
+| THERMO slow response | Can't detect sudden spikes | Use for ambient monitoring only |
+| DISTANCE line-of-sight only | Can't read through objects | Mount with clear line of sight to target |
+| DISTANCE affected by dark surfaces | Dark targets read farther than reality | Calibrate with actual target surface |
 | Qwiic 3.3V only | 5V sensors will damage modules | Only use Modulino modules on Qwiic |
-| Qwiic max 1.2m cable | Limited reach from UNO Q | Place UNO Q centrally; daisy-chain extends total reach |
-| PIXELS up to 267 mA (all LEDs full) | Can stress USB power if combined with other loads | Keep brightness ≤ 80 during normal operation |
-| PIXELS needs `show()` | LEDs will not update without it | Always call `leds.show()` after every `leds.set()` |
-| No USB camera | Can't use TinyML camera kit via cable | Use smartphone IP camera app over WiFi |
-| Gyro drift on MOVEMENT | Yaw/Pitch/Roll wander over time | Use only accelerometer axes (getX/Y/Z) for activity detection |
-
----
-
-## All Modulino Modules — Quick Reference (full kit)
-
-Modules not used by Smart Pet Care are listed for reference (other subteams may use them).
-
-| Module | Chip | Supply | Power | Accuracy | Resolution | Used by us |
-|--------|------|--------|-------|----------|------------|-----------|
-| DISTANCE | VL53L4CDV0DH/1 | 2.6–3.5V | 40mA peak / 24mA ranging | ±7mm to ±3% | 1mm | **Yes** |
-| THERMO | HS3003 | 2.3–5.5V | 24.4 µA | Temp ±0.25°C / RH ±2.8% | 14-bit | **Yes** |
-| MOVEMENT | LSM6DSOXTR | 1.71–3.6V | 170µA (accel) / 0.55mA (gyro) | ±20 mg / ±1 dps | 0.061mg/LSB / 4.375mdps/LSB | **Yes** |
-| PIXELS | 8× LC8822-2020 | 2.0–3.6V | 33mA×8 + 3.4mA | — | 8-bit per channel | **Yes** |
-| BUZZER | PKLCS1212E4001 | 2.0–3.6V | 6.4 mA | ADC ±2 LSB INL | 12-bit ADC | **Yes** |
-| KNOB | Quadrature encoder | 2.0–3.6V | 3.4 mA | Oscillator ±1% | 12-bit ADC | No |
-| BUTTONS | 3× SPST | 2.0–3.6V | 2.5mA×3 + 3.4mA | ADC ±2 LSB INL | 12-bit ADC | No |
-
----
-
-## Other Subteams — Brief Context
-
-These teams share the same hardware kit. Understanding their setup helps during integration or shared dashboard work.
-
-**Smart Pillbox** — UNO Q + Qwiic chain (DISTANCE for lid detection, THERMO for storage temp, BUTTONS for confirm/snooze, PIXELS + BUZZER for reminder feedback) + Nano 33 BLE Sense over BLE (detects box being handled). States: TAKEN / SNOOZED / MISSED / HESITATED.
-
-**Smart Gait Aid** — Nano 33 BLE Sense mounted on the walker (IMU + TinyML gait classifier) sends state over BLE to UNO Q. UNO Q drives PIXELS (green/amber/red handle ring) + BUZZER (cadence cue). States: NORMAL_GAIT / ASYMMETRIC / FALL_RISK. This team uses the Nano 33 BLE Sense heavily; we do not.
+| Qwiic max 1.2m cable | Limited reach | Daisy-chain extends total reach |
+| PIXELS up to 267 mA (all LEDs full) | Stresses USB power | Keep brightness ≤ 80 normally |
+| PIXELS needs `show()` | LEDs won't update without it | Always call `leds.show()` after `leds.set()` |
+| Nano 33 BLE A7 not 5V tolerant | 5V signal will damage the board | Power OJFF14 from 3.3V or use level shifter |
