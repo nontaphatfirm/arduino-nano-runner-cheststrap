@@ -1,0 +1,1660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Runner Form Sensor Test</title>
+<style>
+  :root {
+    --bg: #101113;
+    --panel: #1a1d20;
+    --panel-2: #202429;
+    --border: #30363d;
+    --text: #eef2f6;
+    --muted: #8b98a8;
+    --green: #35c46f;
+    --blue: #4aa3ff;
+    --orange: #ff9b3d;
+    --red: #ff5c6c;
+    --yellow: #f4cc4f;
+    --radius: 8px;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    background: #17191c;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.2;
+    letter-spacing: 0;
+  }
+
+  .subtitle { color: var(--muted); font-size: 12px; }
+
+  button {
+    border: 1px solid var(--border);
+    background: var(--panel-2);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-weight: 650;
+    min-height: 36px;
+  }
+
+  button.primary { background: var(--blue); color: #07111f; border-color: #65b4ff; }
+  button.danger { background: #3b2025; color: #ffdce1; border-color: #69313a; }
+  button:hover { filter: brightness(1.08); }
+
+  .header-actions { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+  .status { display: flex; align-items: center; gap: 8px; color: var(--muted); min-width: 240px; }
+  .dot { width: 10px; height: 10px; border-radius: 999px; background: #59616c; flex: 0 0 auto; }
+  .dot.on { background: var(--green); box-shadow: 0 0 10px #35c46faa; }
+  .dot.err { background: var(--red); box-shadow: 0 0 10px #ff5c6c88; }
+
+  main {
+    display: grid;
+    grid-template-columns: 1.2fr .8fr;
+    gap: 14px;
+    padding: 14px;
+  }
+
+  .stack { display: grid; gap: 14px; }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+
+  .title {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  .visual-grid {
+    display: grid;
+    grid-template-columns: minmax(280px, 1.15fr) minmax(260px, .85fr);
+    gap: 14px;
+  }
+
+  .scene {
+    min-height: 280px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background:
+      linear-gradient(#2a3037 1px, transparent 1px),
+      linear-gradient(90deg, #2a3037 1px, transparent 1px),
+      radial-gradient(circle at 50% 36%, #27313b 0%, #15181b 60%);
+    background-size: 42px 42px, 42px 42px, 100% 100%;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .path-scene {
+    min-height: 340px;
+    perspective: 760px;
+  }
+
+  .space-3d {
+    position: absolute;
+    inset: 18px;
+    transform-style: preserve-3d;
+    transform: rotateX(62deg) rotateZ(-38deg);
+  }
+
+  .floor-grid {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 310px;
+    height: 310px;
+    margin-left: -155px;
+    margin-top: -155px;
+    border: 1px solid #4b556288;
+    background:
+      linear-gradient(#303a4577 1px, transparent 1px),
+      linear-gradient(90deg, #303a4577 1px, transparent 1px);
+    background-size: 31px 31px;
+    transform-style: preserve-3d;
+  }
+
+  .axis-line {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform-origin: left center;
+    border-radius: 999px;
+  }
+
+  .axis-line.x {
+    width: 180px;
+    height: 4px;
+    background: var(--red);
+  }
+
+  .axis-line.y {
+    width: 180px;
+    height: 4px;
+    background: var(--green);
+    transform: rotateZ(90deg);
+  }
+
+  .axis-line.z {
+    width: 150px;
+    height: 4px;
+    background: var(--blue);
+    transform: rotateY(-90deg);
+    transform-origin: left center;
+  }
+
+  .axis-label-3d {
+    position: absolute;
+    font-size: 12px;
+    font-weight: 850;
+    text-shadow: 0 1px 4px #000;
+  }
+
+  .axis-label-3d.x { left: calc(50% + 188px); top: calc(50% - 8px); color: var(--red); }
+  .axis-label-3d.y { left: calc(50% - 18px); top: calc(50% + 188px); color: var(--green); }
+  .axis-label-3d.z { left: calc(50% - 8px); top: calc(50% - 164px); color: var(--blue); }
+
+  .board-vector {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 4px;
+    height: 4px;
+    background: var(--yellow);
+    border-radius: 999px;
+    box-shadow: 0 0 14px #f4cc4f;
+    transform-origin: 0 0;
+    transition: transform 60ms linear, width 60ms linear;
+  }
+
+  .origin-dot {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 12px;
+    height: 12px;
+    margin-left: -6px;
+    margin-top: -6px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2px solid #aeb8c5;
+    box-shadow: 0 0 14px #ffffff88;
+  }
+
+  .sensor-board {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 132px;
+    height: 54px;
+    margin-left: -66px;
+    margin-top: -27px;
+    transform-style: preserve-3d;
+    transform: rotateZ(-90deg);
+    transition: transform 60ms linear;
+  }
+
+  .nano-cad-board {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    transform: translateZ(4px);
+  }
+
+  .nano-cad-pcb {
+    position: absolute;
+    inset: 0;
+    border-radius: 6px;
+    background:
+      linear-gradient(90deg, #1f6fba 0 16%, #145fa8 16% 84%, #114d88 84%),
+      linear-gradient(135deg, #207fc6, #0f4d8d);
+    border: 1px solid #70b7e8;
+    box-shadow: 0 12px 24px #000a;
+  }
+
+  .nano-cad-pcb::before {
+    content: '';
+    position: absolute;
+    inset: 5px 7px;
+    border-radius: 4px;
+    border: 1px solid #7fc4ee55;
+  }
+
+  .nano-cad-pcb::after {
+    content: '';
+    position: absolute;
+    left: -1px;
+    right: -1px;
+    bottom: -5px;
+    height: 5px;
+    border-radius: 0 0 5px 5px;
+    background: #0a3867;
+    transform: rotateX(-70deg);
+    transform-origin: top center;
+  }
+
+  .cad-usb {
+    position: absolute;
+    left: -9px;
+    top: 18px;
+    width: 20px;
+    height: 18px;
+    border-radius: 3px;
+    background: linear-gradient(#d8e0e6, #8e9aa3);
+    border: 1px solid #f1f5f8;
+    box-shadow: 0 3px 8px #0008;
+    transform: translateZ(9px);
+  }
+
+  .cad-usb::after {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 4px;
+    right: 4px;
+    bottom: 4px;
+    border-radius: 2px;
+    background: #2d343b;
+  }
+
+  .cad-pin-row {
+    position: absolute;
+    left: 58px;
+    width: 68px;
+    display: flex;
+    justify-content: space-between;
+    transform: translateZ(8px);
+  }
+
+  .cad-pin-row.top { top: 1px; }
+  .cad-pin-row.bottom { bottom: 1px; }
+
+  .cad-pin {
+    width: 3px;
+    height: 6px;
+    border-radius: 1px;
+    background: linear-gradient(#fbf4cf, #c79f38);
+    box-shadow: 0 1px 2px #0009;
+  }
+
+  .cad-part {
+    position: absolute;
+    border-radius: 2px;
+    background: #1f252b;
+    border: 1px solid #56616a;
+    box-shadow: 0 3px 7px #0008;
+    transform: translateZ(10px);
+  }
+
+  .cad-module {
+    right: 8px;
+    top: 13px;
+    width: 32px;
+    height: 28px;
+    background: linear-gradient(135deg, #26313a, #11181e);
+  }
+
+  .cad-module::after {
+    content: 'NINA-B3';
+    position: absolute;
+    left: 4px;
+    bottom: 4px;
+    color: #dbe6ee;
+    font-size: 5px;
+    font-weight: 800;
+    letter-spacing: .06em;
+  }
+
+  .cad-module .antenna {
+    position: absolute;
+    right: 2px;
+    top: 3px;
+    width: 9px;
+    height: 22px;
+    border-radius: 2px;
+    background: #d7ead7;
+  }
+
+  .cad-button {
+    left: 28px;
+    top: 20px;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #f4f7fa 0 32%, #b8c1c9 34% 58%, #232b32 60%);
+  }
+
+  .cad-imu {
+    left: 60px;
+    top: 13px;
+    width: 13px;
+    height: 10px;
+  }
+
+  .cad-sensor {
+    left: 64px;
+    top: 25px;
+    width: 10px;
+    height: 8px;
+    background: #151b20;
+  }
+
+  .cad-mic {
+    left: 77px;
+    top: 24px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #101417 0 33%, #5e6870 35% 54%, #171d22 56%);
+  }
+
+  .cad-power {
+    left: 44px;
+    top: 25px;
+    width: 15px;
+    height: 12px;
+  }
+
+  .cad-led {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    transform: translateZ(11px);
+    box-shadow: 0 0 8px currentColor;
+  }
+
+  .cad-led.usb {
+    left: 5px;
+    top: 8px;
+    color: #32d96e;
+    background: #32d96e;
+  }
+
+  .cad-led.power {
+    left: 5px;
+    bottom: 8px;
+    color: #f4cc4f;
+    background: #f4cc4f;
+  }
+
+  .cad-label {
+    position: absolute;
+    left: 82px;
+    bottom: 7px;
+    color: #dff1ff;
+    font-size: 7px;
+    font-weight: 850;
+    letter-spacing: .05em;
+    transform: translateZ(12px);
+    text-shadow: 0 1px 3px #000;
+    white-space: nowrap;
+  }
+
+  .signal-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .signal-card {
+    min-height: 136px;
+    background: #15191d;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 10px;
+    overflow: hidden;
+  }
+
+  .signal-label {
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+  }
+
+  .signal-value {
+    margin-top: 6px;
+    font-size: 24px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .signal-stage {
+    height: 76px;
+    margin-top: 8px;
+    position: relative;
+    border-radius: 6px;
+    background:
+      linear-gradient(#26303a 1px, transparent 1px),
+      linear-gradient(90deg, #26303a 1px, transparent 1px),
+      #111518;
+    background-size: 28px 28px;
+    overflow: hidden;
+  }
+
+  .stage-tag {
+    position: absolute;
+    bottom: 5px;
+    color: #8b98a8;
+    font-size: 10px;
+    font-weight: 750;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+
+  .stage-tag.left { left: 8px; }
+  .stage-tag.right { right: 8px; }
+  .stage-tag.top {
+    top: 5px;
+    bottom: auto;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .lean-stick {
+    position: absolute;
+    left: 50%;
+    bottom: 12px;
+    width: 12px;
+    height: 52px;
+    margin-left: -6px;
+    background: var(--blue);
+    border-radius: 8px;
+    transform-origin: bottom center;
+    transition: transform 60ms linear;
+  }
+
+  .lean-stick::before {
+    content: '';
+    position: absolute;
+    top: -18px;
+    left: 50%;
+    width: 22px;
+    height: 22px;
+    margin-left: -11px;
+    border-radius: 50%;
+    background: var(--yellow);
+  }
+
+  .lean-stick.front {
+    background: var(--green);
+  }
+
+  .lean-stick.front::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 19px;
+    width: 42px;
+    height: 7px;
+    margin-left: -21px;
+    border-radius: 999px;
+    background: var(--orange);
+  }
+
+  .roll-board {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 72px;
+    height: 34px;
+    margin-left: -36px;
+    margin-top: -17px;
+    background: linear-gradient(135deg, #2aa84f, #12632a);
+    border: 1px solid #49c96c;
+    border-radius: 5px;
+    box-shadow: 0 8px 18px #0009;
+    transform-origin: center;
+    transition: transform 60ms linear;
+  }
+
+  .yaw-compass {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 62px;
+    height: 62px;
+    margin-left: -31px;
+    margin-top: -31px;
+    border: 2px solid #3c4652;
+    border-radius: 50%;
+  }
+
+  .yaw-needle {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 4px;
+    height: 28px;
+    margin-left: -2px;
+    margin-top: -28px;
+    background: var(--red);
+    border-radius: 4px;
+    transform-origin: 50% 100%;
+    transition: transform 60ms linear;
+  }
+
+  #pathCanvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  #impactCanvas {
+    width: 100%;
+    height: 150px;
+    display: block;
+    background: #111518;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+  }
+
+  .impact-stage {
+    position: relative;
+    height: 132px;
+    margin-top: 10px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background:
+      linear-gradient(90deg, transparent 49%, #35414c 49%, #35414c 51%, transparent 51%),
+      linear-gradient(#26303a 1px, transparent 1px),
+      #12161a;
+    background-size: 100% 100%, 100% 26px;
+    overflow: hidden;
+  }
+
+  .impact-runner {
+    position: absolute;
+    left: 50%;
+    top: 48%;
+    width: 44px;
+    height: 58px;
+    transform: translate(-50%, -50%);
+    transition: transform 60ms linear;
+  }
+
+  .impact-runner .body {
+    position: absolute;
+    left: 50%;
+    top: 12px;
+    width: 12px;
+    height: 34px;
+    margin-left: -6px;
+    border-radius: 8px;
+    background: var(--blue);
+  }
+
+  .impact-runner .body::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: -16px;
+    width: 18px;
+    height: 18px;
+    margin-left: -9px;
+    border-radius: 50%;
+    background: var(--yellow);
+  }
+
+  .impact-runner .feet {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 36px;
+    height: 7px;
+    margin-left: -18px;
+    border-radius: 999px;
+    background: var(--green);
+  }
+
+  .impact-ground {
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: 24px;
+    height: 3px;
+    border-radius: 999px;
+    background: #3d4854;
+  }
+
+  .runner {
+    position: absolute;
+    left: 50%;
+    top: 54%;
+    width: 64px;
+    height: 112px;
+    transform: translate(-50%, -50%);
+    transform-origin: 50% 68%;
+    transition: transform 60ms linear;
+  }
+
+  .head, .torso, .hip, .leg, .arm {
+    position: absolute;
+    left: 50%;
+    transform-origin: top center;
+  }
+
+  .head {
+    width: 24px;
+    height: 24px;
+    margin-left: -12px;
+    border-radius: 50%;
+    background: var(--yellow);
+    top: 0;
+  }
+
+  .torso {
+    width: 14px;
+    height: 46px;
+    margin-left: -7px;
+    top: 27px;
+    background: var(--blue);
+    border-radius: 8px;
+  }
+
+  .hip {
+    width: 34px;
+    height: 10px;
+    margin-left: -17px;
+    top: 70px;
+    background: #d9dee5;
+    border-radius: 10px;
+  }
+
+  .leg, .arm {
+    width: 8px;
+    height: 46px;
+    top: 76px;
+    background: var(--green);
+    border-radius: 7px;
+  }
+
+  .arm {
+    height: 38px;
+    top: 34px;
+    background: var(--orange);
+  }
+
+  .leg.left { margin-left: -13px; }
+  .leg.right { margin-left: 5px; }
+  .arm.left { margin-left: -15px; }
+  .arm.right { margin-left: 7px; }
+
+  .foot-shadow {
+    position: absolute;
+    left: 50%;
+    top: calc(54% + 72px);
+    width: 112px;
+    height: 22px;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: #0008;
+    filter: blur(3px);
+  }
+
+  .metrics {
+    display: grid;
+    gap: 10px;
+  }
+
+  .metric {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 12px;
+  }
+
+  .metric .label {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 750;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+  }
+
+  .metric .value {
+    margin-top: 6px;
+    font-size: 28px;
+    line-height: 1;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .metric .unit { color: var(--muted); font-size: 12px; margin-top: 5px; }
+
+  .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+
+  canvas.chart {
+    width: 100%;
+    height: 160px;
+    display: block;
+    background: #131619;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+  }
+
+  .axisRows { display: grid; gap: 7px; }
+  .axisRow { display: grid; grid-template-columns: 24px 1fr 86px; gap: 8px; align-items: center; }
+  .axisLabel { font-weight: 800; text-align: center; }
+  .barBg { height: 9px; border-radius: 999px; background: #111417; overflow: hidden; border: 1px solid #29313a; }
+  .barFg { height: 100%; width: 50%; border-radius: 999px; transition: width 60ms linear; }
+  .axisNum { text-align: right; color: #dce5ef; font-variant-numeric: tabular-nums; font-size: 12px; }
+
+  .cue {
+    display: grid;
+    gap: 8px;
+  }
+
+  .cueItem {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--panel-2);
+  }
+
+  .cueItem strong { color: var(--text); }
+  .cueItem span { color: var(--muted); text-align: right; }
+
+  .sound-meter {
+    height: 16px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: #111417;
+    overflow: hidden;
+    margin-top: 10px;
+  }
+
+  .sound-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--green), var(--yellow), var(--red));
+    transition: width 60ms linear;
+  }
+
+  .control-row {
+    display: grid;
+    grid-template-columns: 92px 1fr 54px;
+    gap: 10px;
+    align-items: center;
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--yellow);
+  }
+
+  .log {
+    height: 112px;
+    overflow: auto;
+    color: #b8c5d3;
+    background: #101316;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 9px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+    white-space: pre-wrap;
+  }
+
+  .small {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  @media (max-width: 1050px) {
+    main, .visual-grid { grid-template-columns: 1fr; }
+    .header-actions { margin-left: 0; }
+  }
+
+  @media (max-width: 640px) {
+    main { padding: 10px; }
+    .grid2, .grid3, .signal-grid { grid-template-columns: 1fr; }
+    .scene { min-height: 300px; }
+    .status { min-width: 0; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Runner Form Sensor Test</h1>
+    <div class="subtitle">Arduino Nano 33 BLE Sense · live IMU acceleration, orientation, and contact sound</div>
+  </div>
+  <div class="status">
+    <div id="statusDot" class="dot"></div>
+    <div id="statusText">Disconnected</div>
+  </div>
+  <div class="header-actions">
+    <button id="connectBtn" class="primary" onclick="toggleConnect()">Connect Serial</button>
+    <button onclick="resetTracking()">Reset Tracking</button>
+  </div>
+</header>
+
+<main>
+  <section class="stack">
+    <div class="visual-grid">
+      <div class="panel">
+        <div class="title"><span>Blender-Style Orientation</span><span id="boardName">waiting for board</span></div>
+        <div class="scene path-scene">
+          <canvas id="pathCanvas"></canvas>
+          <div class="space-3d">
+            <div class="floor-grid">
+              <div class="axis-line x"></div>
+              <div class="axis-line y"></div>
+              <div class="axis-line z"></div>
+              <div class="axis-label-3d x">X</div>
+              <div class="axis-label-3d y">Y USB</div>
+              <div class="axis-label-3d z">Z</div>
+              <div class="origin-dot"></div>
+              <div id="sensorBoard" class="sensor-board">
+                <div class="nano-cad-board" aria-label="Arduino Nano 33 BLE CAD-based board model">
+                  <div class="nano-cad-pcb"></div>
+                  <div class="cad-usb"></div>
+                  <div class="cad-pin-row top">
+                    <div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div>
+                  </div>
+                  <div class="cad-pin-row bottom">
+                    <div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div><div class="cad-pin"></div>
+                  </div>
+                  <div class="cad-part cad-module"><div class="antenna"></div></div>
+                  <div class="cad-part cad-button"></div>
+                  <div class="cad-part cad-power"></div>
+                  <div class="cad-part cad-imu"></div>
+                  <div class="cad-part cad-sensor"></div>
+                  <div class="cad-part cad-mic"></div>
+                  <div class="cad-led usb"></div>
+                  <div class="cad-led power"></div>
+                  <div class="cad-label">NANO 33 BLE</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="metric" style="margin-top:10px">
+          <div class="label">Locked Position</div>
+          <div id="positionValue" class="value">0, 0, 0</div>
+          <div class="unit">origin fixed · orientation only</div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="title"><span>Impact Up/Down</span><span>vertical pulse</span></div>
+        <canvas id="impactCanvas"></canvas>
+        <div class="impact-stage">
+          <div class="impact-ground"></div>
+          <div id="impactRunner" class="impact-runner">
+            <div class="body"></div>
+            <div class="feet"></div>
+          </div>
+        </div>
+        <div class="grid2" style="margin-top:10px">
+          <div class="metric">
+            <div class="label">Impact</div>
+            <div id="impactValue" class="value">0.00</div>
+            <div class="unit">m/s² above gravity</div>
+          </div>
+          <div class="metric">
+            <div class="label">Cadence</div>
+            <div id="cadenceValue" class="value">--</div>
+            <div class="unit">steps/min estimate</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="title"><span>Lean / Roll / Yaw</span><span>forward-back and left-right shown separately</span></div>
+      <div class="signal-grid">
+        <div class="signal-card">
+          <div class="signal-label">Forward / Back Lean · pitch</div>
+          <div id="leanValue" class="signal-value">0.0°</div>
+          <div class="signal-stage">
+            <div class="stage-tag left">back</div>
+            <div class="stage-tag right">forward</div>
+            <div id="leanStick" class="lean-stick"></div>
+          </div>
+        </div>
+        <div class="signal-card">
+          <div class="signal-label">Left / Right Lean · roll</div>
+          <div id="rollVisualValue" class="signal-value">0.0°</div>
+          <div class="signal-stage">
+            <div class="stage-tag left">left</div>
+            <div class="stage-tag right">right</div>
+            <div id="sideLeanStick" class="lean-stick front"></div>
+          </div>
+        </div>
+        <div class="signal-card">
+          <div class="signal-label">Yaw · heading</div>
+          <div id="yawVisualValue" class="signal-value">0.0°</div>
+          <div class="signal-stage">
+            <div class="stage-tag top">heading</div>
+            <div class="yaw-compass"><div id="yawNeedle" class="yaw-needle"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="panel">
+        <div class="title"><span>Accelerometer</span><span>m/s²</span></div>
+        <canvas id="accelChart" class="chart"></canvas>
+        <div class="axisRows" style="margin-top:10px">
+          <div class="axisRow"><div class="axisLabel" style="color:var(--red)">X</div><div class="barBg"><div id="barAX" class="barFg" style="background:var(--red)"></div></div><div id="numAX" class="axisNum">0.00</div></div>
+          <div class="axisRow"><div class="axisLabel" style="color:var(--green)">Y</div><div class="barBg"><div id="barAY" class="barFg" style="background:var(--green)"></div></div><div id="numAY" class="axisNum">0.00</div></div>
+          <div class="axisRow"><div class="axisLabel" style="color:var(--blue)">Z</div><div class="barBg"><div id="barAZ" class="barFg" style="background:var(--blue)"></div></div><div id="numAZ" class="axisNum">0.00</div></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="title"><span>Estimated Position</span><span>drift reset enabled</span></div>
+        <canvas id="posChart" class="chart"></canvas>
+        <div class="grid3" style="margin-top:10px">
+          <div class="metric"><div class="label">X</div><div id="posX" class="value">0.00</div><div class="unit">m</div></div>
+          <div class="metric"><div class="label">Y</div><div id="posY" class="value">0.00</div><div class="unit">m</div></div>
+          <div class="metric"><div class="label">Z</div><div id="posZ" class="value">0.00</div><div class="unit">m</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="stack">
+    <div class="panel">
+      <div class="title"><span>OJFF14 Sound Sensor</span><span>A7 analog input</span></div>
+      <canvas id="soundChart" class="chart"></canvas>
+      <div class="sound-meter"><div id="soundFill" class="sound-fill"></div></div>
+      <div class="control-row">
+        <label for="soundGain">Sensitivity</label>
+        <input id="soundGain" type="range" min="0.5" max="20" step="0.5" value="4" oninput="setSoundGain(this.value)">
+        <span id="soundGainValue">4.0x</span>
+      </div>
+      <div class="grid3" style="margin-top:10px">
+        <div class="metric"><div class="label">Level</div><div id="soundValue" class="value">0%</div><div class="unit">normalized peak</div></div>
+        <div class="metric"><div class="label">Peak</div><div id="soundPeak" class="value">0</div><div class="unit">ADC p-p</div></div>
+        <div class="metric"><div class="label">Voltage</div><div id="soundVolts" class="value">0.00</div><div class="unit">V average</div></div>
+      </div>
+      <div class="cueItem" style="margin-top:10px"><strong>Contact pulse</strong><span id="soundPulseCue">stand by</span></div>
+    </div>
+
+    <div class="panel">
+      <div class="title"><span>Running Form Cues</span><span id="sampleRate">0 Hz</span></div>
+      <div class="cue">
+        <div class="cueItem"><strong>Impact</strong><span id="cueImpact">stand by</span></div>
+        <div class="cueItem"><strong>Lean</strong><span id="cueLean">stand by</span></div>
+        <div class="cueItem"><strong>Side sway</strong><span id="cueSway">stand by</span></div>
+        <div class="cueItem"><strong>Vertical bounce</strong><span id="cueBounce">stand by</span></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="title"><span>Orientation</span><span>complementary filter</span></div>
+      <div class="grid3">
+        <div class="metric"><div class="label">Roll</div><div id="rollValue" class="value">0.0°</div></div>
+        <div class="metric"><div class="label">Pitch</div><div id="pitchValue" class="value">0.0°</div></div>
+        <div class="metric"><div class="label">Yaw</div><div id="yawValue" class="value">0.0°</div></div>
+      </div>
+      <div class="small" style="margin-top:10px">
+        Position is estimated from the live accelerometer and gyro stream after reset.
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="title"><span>Serial Log</span><span>115200 baud</span></div>
+      <div id="log" class="log"></div>
+    </div>
+  </aside>
+</main>
+
+<script>
+let port = null;
+let reader = null;
+let readPromise = null;
+let connected = false;
+let disconnecting = false;
+let lineBuffer = '';
+
+const WIN = 120;
+const accelHist = { x: Array(WIN).fill(0), y: Array(WIN).fill(0), z: Array(WIN).fill(0) };
+const posHist = { x: Array(WIN).fill(0), y: Array(WIN).fill(0), z: Array(WIN).fill(0) };
+const impactHist = Array(WIN).fill(0);
+const soundHist = Array(WIN).fill(0);
+const path = [];
+// CAD USB connector is on local -X; this offset makes the USB end point along +Y.
+const BOARD_MOUNT_YAW_OFFSET_DEG = -90;
+const BOARD_MOUNT_ROLL_OFFSET_DEG = 0;
+const BOARD_MOUNT_PITCH_OFFSET_DEG = 0;
+
+const state = {
+  lastArduinoT: null,
+  lastBrowserT: 0,
+  roll: 0,
+  pitch: 0,
+  yaw: 0,
+  velocity: [0, 0, 0],
+  position: [0, 0, 0],
+  samples: 0,
+  hzCount: 0,
+  hzTimer: performance.now(),
+  lastStepAt: 0,
+  cadence: 0,
+  lastPeak: false,
+  maxBounce: 0,
+  maxSway: 0,
+  impact: 0,
+  bounceOffset: 0,
+  pathAccel: [0, 0],
+  soundLevel: 0,
+  soundGain: 4.0,
+  boardQuat: [1, 0, 0, 0]
+};
+
+function logLine(text) {
+  const el = document.getElementById('log');
+  el.textContent = `${new Date().toLocaleTimeString()} ${text}\n` + el.textContent;
+}
+
+function setStatus(kind, text) {
+  const dot = document.getElementById('statusDot');
+  dot.className = kind === 'ok' ? 'dot on' : kind === 'err' ? 'dot err' : 'dot';
+  document.getElementById('statusText').textContent = text;
+}
+
+async function toggleConnect() {
+  const btn = document.getElementById('connectBtn');
+  if (connected) {
+    await disconnectSerial('user disconnected', { closePort: true });
+    return;
+  }
+
+  if (!navigator.serial) {
+    setStatus('err', 'Web Serial needs Chrome or Edge');
+    return;
+  }
+
+  try {
+    port = await navigator.serial.requestPort();
+    await port.open({ baudRate: 115200 });
+    connected = true;
+    btn.textContent = 'Disconnect';
+    btn.classList.remove('primary');
+    btn.classList.add('danger');
+    setStatus('ok', 'Connected · waiting for IMU packets');
+    resetTracking();
+    readPromise = readLoop();
+    logLine('connected');
+  } catch (err) {
+    setStatus('err', err.message);
+    logLine(`connect error: ${err.message}`);
+    if (port) {
+      await disconnectSerial('connect cleanup', { closePort: true });
+    }
+  }
+}
+
+async function disconnectSerial(reason = 'disconnected', options = {}) {
+  const closePort = options.closePort !== false;
+  if (disconnecting) return;
+  disconnecting = true;
+
+  const btn = document.getElementById('connectBtn');
+  btn.disabled = true;
+  try {
+    connected = false;
+
+    const activeReader = reader;
+    if (activeReader) {
+      try { await activeReader.cancel(); } catch (_) {}
+    }
+
+    if (readPromise) {
+      try { await readPromise; } catch (_) {}
+      readPromise = null;
+    }
+
+    if (closePort && port) {
+      await delay(80);
+      try { await port.close(); } catch (_) {}
+    }
+
+    port = null;
+    lineBuffer = '';
+    btn.textContent = 'Connect Serial';
+    btn.classList.add('primary');
+    btn.classList.remove('danger');
+    setStatus('', 'Disconnected');
+    logLine(reason);
+  } finally {
+    btn.disabled = false;
+    disconnecting = false;
+  }
+}
+
+async function readLoop() {
+  const decoder = new TextDecoder();
+  const activePort = port;
+  const activeReader = activePort.readable.getReader();
+  reader = activeReader;
+  lineBuffer = '';
+  try {
+    while (true) {
+      const { value, done } = await activeReader.read();
+      if (done) break;
+      lineBuffer += decoder.decode(value, { stream: true });
+      const lines = lineBuffer.split('\n');
+      lineBuffer = lines.pop();
+      for (const raw of lines) {
+        const line = raw.trim();
+        if (!line.startsWith('{')) continue;
+        try {
+          const packet = JSON.parse(line);
+          if (packet.type === 'init') applyInit(packet);
+          if (packet.type === 'log') logLine(`${packet.level || 'info'}: ${packet.message || ''}`);
+          if (packet.type === 'data') applyData(packet);
+        } catch (err) {
+          logLine(`bad JSON: ${line.slice(0, 90)}`);
+        }
+      }
+    }
+  } catch (_) {
+    // Normal during disconnect.
+  } finally {
+    try { activeReader.releaseLock(); } catch (_) {}
+    if (reader === activeReader) reader = null;
+  }
+}
+
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+if ('serial' in navigator) {
+  navigator.serial.addEventListener('disconnect', () => {
+    if (connected || reader || port) {
+      disconnectSerial('USB device disconnected', { closePort: false });
+    }
+  });
+}
+
+window.addEventListener('pagehide', () => {
+  connected = false;
+  if (reader) {
+    try { reader.cancel(); } catch (_) {}
+  }
+});
+
+function applyInit(packet) {
+  document.getElementById('boardName').textContent = packet.board || 'Nano 33 BLE Sense';
+  setStatus(packet.imu ? 'ok' : 'err', packet.imu ? 'Connected · IMU ready' : 'Connected · IMU failed');
+  logLine(`init: ${packet.board || 'unknown board'}`);
+}
+
+function resetTracking() {
+  state.lastArduinoT = null;
+  state.roll = 0;
+  state.pitch = 0;
+  state.yaw = 0;
+  state.velocity = [0, 0, 0];
+  state.position = [0, 0, 0];
+  state.cadence = 0;
+  state.lastStepAt = 0;
+  state.lastPeak = false;
+  state.maxBounce = 0;
+  state.maxSway = 0;
+  state.impact = 0;
+  state.bounceOffset = 0;
+  state.pathAccel = [0, 0];
+  state.soundLevel = 0;
+  state.boardQuat = [1, 0, 0, 0];
+  path.length = 0;
+  for (const k of ['x', 'y', 'z']) {
+    accelHist[k].fill(0);
+    posHist[k].fill(0);
+  }
+  impactHist.fill(0);
+  soundHist.fill(0);
+  drawAll();
+  logLine('tracking reset');
+}
+
+function setSoundGain(value) {
+  state.soundGain = Number(value);
+  document.getElementById('soundGainValue').textContent = `${state.soundGain.toFixed(1)}x`;
+}
+
+function applyData(d) {
+  const dt = state.lastArduinoT === null ? 0.05 : Math.min(Math.max((d.t - state.lastArduinoT) / 1000, 0.005), 0.2);
+  state.lastArduinoT = d.t;
+  state.samples += 1;
+  state.hzCount += 1;
+
+  const now = performance.now();
+  if (now - state.hzTimer >= 1000) {
+    document.getElementById('sampleRate').textContent = `${state.hzCount} Hz`;
+    state.hzCount = 0;
+    state.hzTimer = now;
+  }
+
+  updateOrientation(d, dt);
+  updatePosition(d, dt);
+  updateSteps(d, now);
+  updateMetrics(d);
+  updateSound(d);
+  updateVisualizers();
+  drawAll();
+}
+
+function updateOrientation(d, dt) {
+  updateBoardQuaternion(d, dt);
+
+  const predictedRoll = state.roll + d.gx * dt;
+  const predictedYaw = state.yaw + d.gz * dt;
+  const accelRoll = unwrapRadians(Math.atan2(d.ay, d.az), predictedRoll);
+  const accelPitch = Math.atan2(-d.ax, Math.sqrt(d.ay * d.ay + d.az * d.az));
+  const alpha = 0.96;
+
+  state.roll = alpha * predictedRoll + (1 - alpha) * accelRoll;
+  state.pitch = alpha * (state.pitch + d.gy * dt) + (1 - alpha) * accelPitch;
+
+  if (d.magReady) {
+    const yawMag = unwrapRadians(Math.atan2(d.my, d.mx), predictedYaw);
+    state.yaw = 0.98 * predictedYaw + 0.02 * yawMag;
+  } else {
+    state.yaw = predictedYaw;
+  }
+}
+
+function rotateBodyToWorld(v) {
+  const [x, y, z] = v;
+  const cp = Math.cos(state.pitch), sp = Math.sin(state.pitch);
+  const cr = Math.cos(state.roll), sr = Math.sin(state.roll);
+  const cy = Math.cos(state.yaw), sy = Math.sin(state.yaw);
+  return [
+    (cy * cp) * x + (cy * sp * sr - sy * cr) * y + (cy * sp * cr + sy * sr) * z,
+    (sy * cp) * x + (sy * sp * sr + cy * cr) * y + (sy * sp * cr - cy * sr) * z,
+    (-sp) * x + (cp * sr) * y + (cp * cr) * z
+  ];
+}
+
+function updatePosition(d, dt) {
+  const world = rotateBodyToWorld([d.ax, d.ay, d.az]);
+  world[2] -= 9.80665;
+  state.pathAccel = [world[0], world[1]];
+
+  const deadband = 0.08;
+  for (let i = 0; i < 3; i++) {
+    const a = Math.abs(world[i]) < deadband ? 0 : world[i];
+    state.velocity[i] = (state.velocity[i] + a * dt) * 0.982;
+    state.position[i] += state.velocity[i] * dt;
+  }
+
+  const linearMag = Math.hypot(world[0], world[1], world[2]);
+  const gyroMag = Math.hypot(d.gx, d.gy, d.gz);
+  if (linearMag < 0.14 && gyroMag < 0.08) {
+    state.velocity = [0, 0, 0];
+  }
+
+  for (let i = 0; i < 3; i++) {
+    state.position[i] = Math.max(-2.5, Math.min(2.5, state.position[i]));
+  }
+
+  push(accelHist.x, d.ax); push(accelHist.y, d.ay); push(accelHist.z, d.az);
+  push(posHist.x, state.position[0]); push(posHist.y, state.position[1]); push(posHist.z, state.position[2]);
+  path.push([state.position[0], state.position[1], state.position[2]]);
+  if (path.length > 180) path.shift();
+
+  state.maxSway = Math.max(state.maxSway * 0.985, Math.abs(state.position[1]));
+  state.maxBounce = Math.max(state.maxBounce * 0.985, Math.abs(state.position[2]));
+}
+
+function updateSteps(d, now) {
+  const impact = Math.abs(Math.hypot(d.ax, d.ay, d.az) - 9.80665);
+  state.impact = impact;
+  state.bounceOffset = Math.min(48, impact * 5.4);
+  push(impactHist, impact);
+  const peak = impact > 3.2;
+  if (peak && !state.lastPeak && now - state.lastStepAt > 230) {
+    if (state.lastStepAt > 0) {
+      const interval = (now - state.lastStepAt) / 1000;
+      const instant = 60 / interval;
+      state.cadence = state.cadence ? state.cadence * 0.72 + instant * 0.28 : instant;
+    }
+    state.lastStepAt = now;
+  }
+  state.lastPeak = peak;
+}
+
+function updateMetrics(d) {
+  const impact = Math.abs(Math.hypot(d.ax, d.ay, d.az) - 9.80665);
+  const rollDeg = radToDeg(state.roll);
+  const pitchDeg = radToDeg(state.pitch);
+  const yawDeg = radToDeg(state.yaw);
+  const yawDisplayDeg = wrapAngle360(yawDeg);
+
+  document.getElementById('impactValue').textContent = impact.toFixed(2);
+  document.getElementById('cadenceValue').textContent = state.cadence ? Math.round(state.cadence) : '--';
+  document.getElementById('positionValue').textContent = '0, 0, 0';
+  document.getElementById('leanValue').textContent = `${pitchDeg.toFixed(1)}°`;
+  document.getElementById('rollVisualValue').textContent = `${rollDeg.toFixed(1)}°`;
+  document.getElementById('yawVisualValue').textContent = `${yawDisplayDeg.toFixed(1)}°`;
+  document.getElementById('rollValue').textContent = `${rollDeg.toFixed(1)}°`;
+  document.getElementById('pitchValue').textContent = `${pitchDeg.toFixed(1)}°`;
+  document.getElementById('yawValue').textContent = `${yawDisplayDeg.toFixed(1)}°`;
+  document.getElementById('posX').textContent = state.position[0].toFixed(2);
+  document.getElementById('posY').textContent = state.position[1].toFixed(2);
+  document.getElementById('posZ').textContent = state.position[2].toFixed(2);
+
+  setAxis('AX', d.ax, 20);
+  setAxis('AY', d.ay, 20);
+  setAxis('AZ', d.az, 20);
+
+  document.getElementById('cueImpact').textContent = impact < 3 ? 'soft landing' : impact < 7 ? 'moderate impact' : 'heavy impact';
+  document.getElementById('cueLean').textContent = Math.abs(pitchDeg) < 8 ? 'upright' : pitchDeg > 0 ? 'leaning back' : 'forward lean';
+  document.getElementById('cueSway').textContent = state.maxSway < 0.25 ? 'stable' : state.maxSway < 0.7 ? 'some sway' : 'large side sway';
+  document.getElementById('cueBounce').textContent = state.maxBounce < 0.20 ? 'low bounce' : state.maxBounce < 0.55 ? 'medium bounce' : 'high bounce';
+}
+
+function updateSound(d) {
+  const rawLevel = Number.isFinite(d.soundLevel) ? Math.max(0, Math.min(1, d.soundLevel)) : 0;
+  const peak = Number.isFinite(d.soundPeak) ? d.soundPeak : 0;
+  const volts = Number.isFinite(d.soundVolts) ? d.soundVolts : 0;
+  const level = Math.max(0, Math.min(1, rawLevel * state.soundGain));
+  state.soundLevel = level;
+  push(soundHist, level * 100);
+
+  document.getElementById('soundValue').textContent = `${Math.round(level * 100)}%`;
+  document.getElementById('soundPeak').textContent = Math.round(peak);
+  document.getElementById('soundVolts').textContent = volts.toFixed(2);
+  document.getElementById('soundFill').style.width = `${Math.round(level * 100)}%`;
+  document.getElementById('soundPulseCue').textContent =
+    level < 0.08 ? 'quiet contact' : level < 0.22 ? 'small pulse activity' : level < 0.55 ? 'clear sound activity' : 'strong contact/noise';
+}
+
+function updateVisualizers() {
+  const rollDeg = radToDeg(state.roll);
+  const pitchDeg = radToDeg(state.pitch);
+  const yawDeg = radToDeg(state.yaw);
+  const leanStick = document.getElementById('leanStick');
+  const sideLeanStick = document.getElementById('sideLeanStick');
+  const yawNeedle = document.getElementById('yawNeedle');
+  const impactRunner = document.getElementById('impactRunner');
+  const sensorBoard = document.getElementById('sensorBoard');
+
+  leanStick.style.transform = `rotate(${Math.max(-35, Math.min(35, -pitchDeg))}deg)`;
+  sideLeanStick.style.transform = `rotate(${Math.max(-35, Math.min(35, rollDeg))}deg)`;
+  yawNeedle.style.transform = `rotate(${yawDeg}deg)`;
+  impactRunner.style.transform = `translate(-50%, calc(-50% - ${state.bounceOffset.toFixed(1)}px))`;
+
+  sensorBoard.style.transform = quaternionToCssMatrix(state.boardQuat);
+}
+
+function setAxis(axis, value, range) {
+  document.getElementById(`bar${axis}`).style.width = `${Math.max(2, Math.min(100, ((value / range) + 1) * 50))}%`;
+  document.getElementById(`num${axis}`).textContent = value.toFixed(2);
+}
+
+function push(arr, value) {
+  arr.push(value);
+  if (arr.length > WIN) arr.shift();
+}
+
+function radToDeg(rad) {
+  return rad * 180 / Math.PI;
+}
+
+function wrapAngle360(angle) {
+  return ((angle % 360) + 360) % 360;
+}
+
+function updateBoardQuaternion(d, dt) {
+  const omega = Math.hypot(d.gx, d.gy, d.gz);
+  if (omega < 1e-6 || dt <= 0) return;
+
+  const halfTheta = omega * dt * 0.5;
+  const sinHalf = Math.sin(halfTheta);
+  const delta = [
+    Math.cos(halfTheta),
+    d.gx / omega * sinHalf,
+    d.gy / omega * sinHalf,
+    d.gz / omega * sinHalf
+  ];
+
+  state.boardQuat = normalizeQuat(multiplyQuat(state.boardQuat, delta));
+}
+
+function multiplyQuat(a, b) {
+  const [aw, ax, ay, az] = a;
+  const [bw, bx, by, bz] = b;
+  return [
+    aw * bw - ax * bx - ay * by - az * bz,
+    aw * bx + ax * bw + ay * bz - az * by,
+    aw * by - ax * bz + ay * bw + az * bx,
+    aw * bz + ax * by - ay * bx + az * bw
+  ];
+}
+
+function normalizeQuat(q) {
+  const len = Math.hypot(q[0], q[1], q[2], q[3]) || 1;
+  return q.map(v => v / len);
+}
+
+function axisAngleQuat(axis, deg) {
+  const rad = deg * Math.PI / 180;
+  const half = rad * 0.5;
+  const s = Math.sin(half);
+  return [Math.cos(half), axis[0] * s, axis[1] * s, axis[2] * s];
+}
+
+function quaternionToCssMatrix(q) {
+  const mounted = multiplyQuat(
+    q,
+    multiplyQuat(
+      axisAngleQuat([0, 0, 1], BOARD_MOUNT_YAW_OFFSET_DEG),
+      multiplyQuat(
+        axisAngleQuat([0, 1, 0], BOARD_MOUNT_ROLL_OFFSET_DEG),
+        axisAngleQuat([1, 0, 0], BOARD_MOUNT_PITCH_OFFSET_DEG)
+      )
+    )
+  );
+  const [w, x, y, z] = normalizeQuat(mounted);
+  const xx = x * x, yy = y * y, zz = z * z;
+  const xy = x * y, xz = x * z, yz = y * z;
+  const wx = w * x, wy = w * y, wz = w * z;
+  const m11 = 1 - 2 * (yy + zz);
+  const m12 = 2 * (xy - wz);
+  const m13 = 2 * (xz + wy);
+  const m21 = 2 * (xy + wz);
+  const m22 = 1 - 2 * (xx + zz);
+  const m23 = 2 * (yz - wx);
+  const m31 = 2 * (xz - wy);
+  const m32 = 2 * (yz + wx);
+  const m33 = 1 - 2 * (xx + yy);
+  return [
+    'matrix3d(',
+    m11.toFixed(6), ',', m12.toFixed(6), ',', m13.toFixed(6), ',0,',
+    m21.toFixed(6), ',', m22.toFixed(6), ',', m23.toFixed(6), ',0,',
+    m31.toFixed(6), ',', m32.toFixed(6), ',', m33.toFixed(6), ',0,',
+    '0,0,0,1)'
+  ].join('');
+}
+
+function unwrapRadians(angle, reference) {
+  let unwrapped = angle;
+  while (unwrapped - reference > Math.PI) unwrapped -= Math.PI * 2;
+  while (unwrapped - reference < -Math.PI) unwrapped += Math.PI * 2;
+  return unwrapped;
+}
+
+function unwrapAngleDeg(angle, reference) {
+  let unwrapped = angle;
+  while (unwrapped - reference > 180) unwrapped -= 360;
+  while (unwrapped - reference < -180) unwrapped += 360;
+  return unwrapped;
+}
+
+function drawAll() {
+  drawChart(document.getElementById('accelChart'), [
+    { data: accelHist.x, color: '#ff5c6c' },
+    { data: accelHist.y, color: '#35c46f' },
+    { data: accelHist.z, color: '#4aa3ff' }
+  ], 22);
+  drawChart(document.getElementById('posChart'), [
+    { data: posHist.x, color: '#ff5c6c' },
+    { data: posHist.y, color: '#35c46f' },
+    { data: posHist.z, color: '#4aa3ff' }
+  ], 2.5);
+  drawChart(document.getElementById('impactCanvas'), [
+    { data: impactHist, color: '#f4cc4f' }
+  ], 12);
+  drawChart(document.getElementById('soundChart'), [
+    { data: soundHist, color: '#35c46f' }
+  ], 100);
+  drawPath();
+}
+
+function drawChart(canvas, series, range) {
+  const ctx = prepCanvas(canvas);
+  const rect = canvas.getBoundingClientRect();
+  const w = rect.width;
+  const h = rect.height;
+  ctx.clearRect(0, 0, w, h);
+  ctx.strokeStyle = '#2b333c';
+  ctx.lineWidth = 1;
+  for (let i = 1; i < 4; i++) {
+    const y = h * i / 4;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = '#4b5562';
+  ctx.beginPath();
+  ctx.moveTo(0, h / 2);
+  ctx.lineTo(w, h / 2);
+  ctx.stroke();
+
+  for (const s of series) {
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    s.data.forEach((v, i) => {
+      const x = i / (s.data.length - 1) * w;
+      const y = h / 2 - Math.max(-range, Math.min(range, v)) / range * (h * 0.42);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  }
+}
+
+function drawPath() {
+  const canvas = document.getElementById('pathCanvas');
+  const ctx = prepCanvas(canvas);
+  const rect = canvas.getBoundingClientRect();
+  const w = rect.width;
+  const h = rect.height;
+  ctx.clearRect(0, 0, w, h);
+
+  const cx = w / 2;
+  const cy = h / 2 + 14;
+
+  const project = ([x, y, z]) => {
+    const scale = 68;
+    return [
+      cx + (x - y) * scale * 0.82,
+      cy + (x + y) * scale * 0.38 - z * scale * 0.95
+    ];
+  };
+
+  const drawAxis = (end, color, label) => {
+    const [x0, y0] = project([0, 0, 0]);
+    const [x1, y1] = project(end);
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x1, y1);
+    ctx.stroke();
+    ctx.font = '12px ui-sans-serif, system-ui, sans-serif';
+    ctx.fillText(label, x1 + 6, y1 + 4);
+  };
+
+  drawAxis([1.8, 0, 0], '#ff5c6c', 'X');
+  drawAxis([0, 1.8, 0], '#35c46f', 'Y');
+  drawAxis([0, 0, 1.6], '#4aa3ff', 'Z');
+
+  const [originX, originY] = project([0, 0, 0]);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.arc(originX, originY, 5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#f4cc4f';
+  ctx.beginPath();
+  ctx.arc(originX, originY, 8, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function prepCanvas(canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const ratio = window.devicePixelRatio || 1;
+  const cssWidth = Math.max(1, rect.width);
+  const cssHeight = Math.max(1, rect.height);
+  const width = Math.floor(cssWidth * ratio);
+  const height = Math.floor(cssHeight * ratio);
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  return ctx;
+}
+
+window.addEventListener('resize', drawAll);
+drawAll();
+</script>
+</body>
+</html>

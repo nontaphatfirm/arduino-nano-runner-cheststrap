@@ -1,0 +1,50 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Claude Code internal memory
+memory/
+
+# Large binary files — hardware datasheets, CAD, schematics
+*.pdf
+*.zip
+*.sch
+*.brd
+*.fzpz
+*.docx
+*.HEIC
+*.heic
+
+# Images (large captures)
+hardware/ov7675/captures/
+
+# Non-code project directories
+orientation/
+slide/
+idea/
+project/
+
+# Compiled Arduino binaries
+*.elf
+*.hex
+*.bin
+build/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+.venv/
+venv/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
