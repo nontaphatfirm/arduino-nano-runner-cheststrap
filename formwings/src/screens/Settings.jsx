@@ -181,11 +181,11 @@ export function Settings({
         <div className="font-mono text-[10px] text-[rgba(255,255,255,0.5)] leading-relaxed select-text select-all">
           <div className="flex justify-between py-1 border-b border-[rgba(255,255,255,0.03)]">
             <span className="text-white font-bold">Service UUID</span>
-            <span>0000180C-0000-1000-8000-00805F9B34FB</span>
+            <span>19B10000-E8F2-537E-4F6C-D104768A1214</span>
           </div>
           <div className="flex justify-between py-1 border-b border-[rgba(255,255,255,0.03)]">
             <span className="text-white font-bold">Characteristic UUID</span>
-            <span>00002A57-0000-1000-8000-00805F9B34FB</span>
+            <span>19B10001-E8F2-537E-4F6C-D104768A1214</span>
           </div>
           <div className="mt-3">
             <span className="text-[#06B6D4] font-bold block mb-1">Raw Payload Mapping:</span>

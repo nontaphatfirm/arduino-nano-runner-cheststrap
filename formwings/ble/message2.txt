@@ -1,0 +1,65 @@
+nRF Connect, 2026-05-28
+FROMWiNGs (14:B5:CD:F0:7C:39)
+V 23:30:30.958 Connecting to 14:B5:CD:F0:7C:39...
+D 23:30:30.958 gatt = device.connectGatt(autoConnect = false, TRANSPORT_LE, preferred PHY = LE 1M)
+D 23:30:31.607 [Callback] Connection state changed with status: 133 and new state: DISCONNECTED (0)
+E 23:30:31.607 Error 133 (0x85): GATT ERROR
+I 23:30:31.607 Disconnected
+D 23:30:41.364 gatt.close()
+D 23:30:41.368 wait(200)
+V 23:30:41.569 Connecting to 14:B5:CD:F0:7C:39...
+D 23:30:41.569 gatt = device.connectGatt(autoConnect = false, TRANSPORT_LE, preferred PHY = LE 1M)
+D 23:30:41.848 [Callback] Connection state changed with status: 0 and new state: CONNECTED (2)
+I 23:30:41.848 Connected to 14:B5:CD:F0:7C:39
+V 23:30:41.863 Discovering services...
+D 23:30:41.863 gatt.discoverServices()
+D 23:30:41.878 [Broadcast] Action received: android.bluetooth.device.action.ACL_CONNECTED
+I 23:30:42.373 Connection parameters updated (interval: 7.5ms, latency: 0, timeout: 5000ms)
+I 23:30:42.719 PHY updated (TX: LE 2M, RX: LE 2M)
+D 23:30:42.724 [Callback] Services discovered with status: 0
+I 23:30:42.724 Services discovered
+V 23:30:42.731 Generic Access (0x1800)
+- Device Name [R] (0x2A00)
+- Appearance [R] (0x2A01)
+Generic Attribute (0x1801)
+- Service Changed [I] (0x2A05)
+   Client Characteristic Configuration (0x2902)
+Unknown Service (19b10000-e8f2-537e-4f6c-d104768a1214)
+- Unknown Characteristic [N R] (19b10001-e8f2-537e-4f6c-d104768a1214)
+   Client Characteristic Configuration (0x2902)
+D 23:30:42.731 gatt.setCharacteristicNotification(00002a05-0000-1000-8000-00805f9b34fb, true)
+D 23:30:42.733 gatt.setCharacteristicNotification(19b10001-e8f2-537e-4f6c-d104768a1214, true)
+I 23:30:42.863 Connection parameters updated (interval: 30.0ms, latency: 0, timeout: 5000ms)
+V 23:30:56.605 Requesting new MTU...
+D 23:30:56.605 gatt.requestMtu(247)
+W 23:30:56.690 Requested MTU not supported. MTU changed to: 242
+V 23:31:00.778 Enabling notifications for 19b10001-e8f2-537e-4f6c-d104768a1214
+D 23:31:00.778 gatt.setCharacteristicNotification(19b10001-e8f2-537e-4f6c-d104768a1214, true)
+D 23:31:00.780 gatt.writeDescriptor(00002902-0000-1000-8000-00805f9b34fb, value=0x0100)
+I 23:31:00.854 Data written to descr. 00002902-0000-1000-8000-00805f9b34fb, value: (0x) 01-00
+A 23:31:00.854 "Notifications enabled" sent
+V 23:31:00.856 Notifications enabled for 19b10001-e8f2-537e-4f6c-d104768a1214
+I 23:31:01.497 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 7B-22-74-79-70-65-22-3A-22-72-75-6E-6E-69-6E-67-5F-66-6F-72-6D-5F-70-72-65-64-69-63-74-69-6F-6E-22-2C-22-77-69-6E-64-6F-77-5F-69-64-22-3A-37-38-2C-22-74-69-6D-65-73-74-61-6D-70-5F-73-22-3A-34, "{"type":"running_form_prediction","window_id":78,"timestamp_s":4"
+A 23:31:01.497 "(0x) 7B-22-74-79-70-65-22-3A-22-72-75-6E-6E-69-6E-67-5F-66-6F-72-6D-5F-70-72-65-64-69-63-74-69-6F-6E-22-2C-22-77-69-6E-64-6F-77-5F-69-64-22-3A-37-38-2C-22-74-69-6D-65-73-74-61-6D-70-5F-73-22-3A-34, "{"type":"running_form_prediction","window_id":78,"timestamp_s":4"" received
+I 23:31:01.552 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 31-36-31-2E-38-31-37-34-2C-22-66-65-61-74-75-72-65-73-22-3A-7B-22-63-61-64-65-6E-63-65-5F-73-70-6D-22-3A-30-2E-30-2C-22-76-65-72-74-69-63-61-6C-5F-6F-73-63-69-6C-6C-61-74-69-6F-6E-5F-63-6D-22, "161.8174,"features":{"cadence_spm":0.0,"vertical_oscillation_cm""
+A 23:31:01.552 "(0x) 31-36-31-2E-38-31-37-34-2C-22-66-65-61-74-75-72-65-73-22-3A-7B-22-63-61-64-65-6E-63-65-5F-73-70-6D-22-3A-30-2E-30-2C-22-76-65-72-74-69-63-61-6C-5F-6F-73-63-69-6C-6C-61-74-69-6F-6E-5F-63-6D-22, "161.8174,"features":{"cadence_spm":0.0,"vertical_oscillation_cm""" received
+I 23:31:01.609 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-30-2E-32-32-2C-22-67-63-74-5F-66-6C-69-67-68-74-5F-62-61-6C-61-6E-63-65-5F-6D-73-22-3A-30-2E-30-2C-22-69-6D-70-61-63-74-5F-6C-6F-61-64-69-6E-67-5F-72-61-74-65-5F-62-77-5F-73-22-3A-30-2E-32, ":0.22,"gct_flight_balance_ms":0.0,"impact_loading_rate_bw_s":0.2"
+A 23:31:01.609 "(0x) 3A-30-2E-32-32-2C-22-67-63-74-5F-66-6C-69-67-68-74-5F-62-61-6C-61-6E-63-65-5F-6D-73-22-3A-30-2E-30-2C-22-69-6D-70-61-63-74-5F-6C-6F-61-64-69-6E-67-5F-72-61-74-65-5F-62-77-5F-73-22-3A-30-2E-32, ":0.22,"gct_flight_balance_ms":0.0,"impact_loading_rate_bw_s":0.2"" received
+I 23:31:01.696 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 33-2C-22-74-72-75-6E-6B-5F-66-6F-72-77-61-72-64-5F-6C-65-61-6E-5F-64-65-67-22-3A-30-2E-31-34-2C-22-6C-65-66-74-5F-72-69-67-68-74-5F-61-73-79-6D-6D-65-74-72-79-5F-70-63-74-22-3A-30-2E-30-2C-22, "3,"trunk_forward_lean_deg":0.14,"left_right_asymmetry_pct":0.0,""
+A 23:31:01.696 "(0x) 33-2C-22-74-72-75-6E-6B-5F-66-6F-72-77-61-72-64-5F-6C-65-61-6E-5F-64-65-67-22-3A-30-2E-31-34-2C-22-6C-65-66-74-5F-72-69-67-68-74-5F-61-73-79-6D-6D-65-74-72-79-5F-70-63-74-22-3A-30-2E-30-2C-22, "3,"trunk_forward_lean_deg":0.14,"left_right_asymmetry_pct":0.0,""" received
+I 23:31:01.697 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 68-65-65-6C-5F-73-74-72-69-6B-65-5F-6C-69-6B-65-6C-69-68-6F-6F-64-22-3A-30-2E-32-32-7D-2C-22-64-69-61-67-6E-6F-73-74-69-63-73-22-3A-7B-22-67-63-74-5F-6D-73-22-3A-30-2E-30-2C-22-66-6C-69-67-68, "heel_strike_likelihood":0.22},"diagnostics":{"gct_ms":0.0,"fligh"
+A 23:31:01.697 "(0x) 68-65-65-6C-5F-73-74-72-69-6B-65-5F-6C-69-6B-65-6C-69-68-6F-6F-64-22-3A-30-2E-32-32-7D-2C-22-64-69-61-67-6E-6F-73-74-69-63-73-22-3A-7B-22-67-63-74-5F-6D-73-22-3A-30-2E-30-2C-22-66-6C-69-67-68, "heel_strike_likelihood":0.22},"diagnostics":{"gct_ms":0.0,"fligh"" received
+I 23:31:01.756 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 74-5F-74-69-6D-65-5F-6D-73-22-3A-30-2E-30-2C-22-70-65-61-6B-5F-76-67-72-66-5F-62-77-5F-65-73-74-69-6D-61-74-65-22-3A-31-2E-30-2C-22-66-6F-6F-74-73-74-72-69-6B-65-5F-74-69-6D-65-5F-74-6F-5F-70, "t_time_ms":0.0,"peak_vgrf_bw_estimate":1.0,"footstrike_time_to_p"
+A 23:31:01.756 "(0x) 74-5F-74-69-6D-65-5F-6D-73-22-3A-30-2E-30-2C-22-70-65-61-6B-5F-76-67-72-66-5F-62-77-5F-65-73-74-69-6D-61-74-65-22-3A-31-2E-30-2C-22-66-6F-6F-74-73-74-72-69-6B-65-5F-74-69-6D-65-5F-74-6F-5F-70, "t_time_ms":0.0,"peak_vgrf_bw_estimate":1.0,"footstrike_time_to_p"" received
+I 23:31:01.787 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 65-61-6B-5F-6D-73-22-3A-30-2E-30-2C-22-66-61-6C-6C-62-61-63-6B-5F-77-69-6E-64-6F-77-22-3A-31-2E-30-2C-22-64-65-74-65-63-74-65-64-5F-73-74-65-70-5F-65-76-65-6E-74-73-22-3A-30-2E-30-7D-2C-22-63, "eak_ms":0.0,"fallback_window":1.0,"detected_step_events":0.0},"c"
+A 23:31:01.787 "(0x) 65-61-6B-5F-6D-73-22-3A-30-2E-30-2C-22-66-61-6C-6C-62-61-63-6B-5F-77-69-6E-64-6F-77-22-3A-31-2E-30-2C-22-64-65-74-65-63-74-65-64-5F-73-74-65-70-5F-65-76-65-6E-74-73-22-3A-30-2E-30-7D-2C-22-63, "eak_ms":0.0,"fallback_window":1.0,"detected_step_events":0.0},"c"" received
+I 23:31:01.853 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 6C-61-73-73-22-3A-22-42-61-64-20-46-6F-72-6D-22-2C-22-70-72-6F-62-61-62-69-6C-69-74-69-65-73-22-3A-7B-22-47-6F-6F-64-22-3A-30-2E-31-37-32-2C-22-42-61-64-20-46-6F-72-6D-22-3A-30-2E-38-32-38-7D, "lass":"Bad Form","probabilities":{"Good":0.172,"Bad Form":0.828}"
+A 23:31:01.853 "(0x) 6C-61-73-73-22-3A-22-42-61-64-20-46-6F-72-6D-22-2C-22-70-72-6F-62-61-62-69-6C-69-74-69-65-73-22-3A-7B-22-47-6F-6F-64-22-3A-30-2E-31-37-32-2C-22-42-61-64-20-46-6F-72-6D-22-3A-30-2E-38-32-38-7D, "lass":"Bad Form","probabilities":{"Good":0.172,"Bad Form":0.828}"" received
+I 23:31:01.881 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 2C-22-66-65-61-74-75-72-65-5F-63-6F-6E-74-72-69-62-75-74-69-6F-6E-73-22-3A-7B-22-63-61-64-65-6E-63-65-5F-73-70-6D-22-3A-31-30-2E-39-30-38-32-2C-22-76-65-72-74-69-63-61-6C-5F-6F-73-63-69-6C-6C, ","feature_contributions":{"cadence_spm":10.9082,"vertical_oscill"
+A 23:31:01.881 "(0x) 2C-22-66-65-61-74-75-72-65-5F-63-6F-6E-74-72-69-62-75-74-69-6F-6E-73-22-3A-7B-22-63-61-64-65-6E-63-65-5F-73-70-6D-22-3A-31-30-2E-39-30-38-32-2C-22-76-65-72-74-69-63-61-6C-5F-6F-73-63-69-6C-6C, ","feature_contributions":{"cadence_spm":10.9082,"vertical_oscill"" received
+I 23:31:01.965 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 61-74-69-6F-6E-5F-63-6D-22-3A-2D-31-38-2E-32-31-36-36-2C-22-67-63-74-5F-66-6C-69-67-68-74-5F-62-61-6C-61-6E-63-65-5F-6D-73-22-3A-2D-34-2E-34-36-34-32-2C-22-69-6D-70-61-63-74-5F-6C-6F-61-64-69, "ation_cm":-18.2166,"gct_flight_balance_ms":-4.4642,"impact_loadi"
+A 23:31:01.965 "(0x) 61-74-69-6F-6E-5F-63-6D-22-3A-2D-31-38-2E-32-31-36-36-2C-22-67-63-74-5F-66-6C-69-67-68-74-5F-62-61-6C-61-6E-63-65-5F-6D-73-22-3A-2D-34-2E-34-36-34-32-2C-22-69-6D-70-61-63-74-5F-6C-6F-61-64-69, "ation_cm":-18.2166,"gct_flight_balance_ms":-4.4642,"impact_loadi"" received
+I 23:31:01.965 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 6E-67-5F-72-61-74-65-5F-62-77-5F-73-22-3A-2D-36-2E-34-34-34-38-2C-22-74-72-75-6E-6B-5F-66-6F-72-77-61-72-64-5F-6C-65-61-6E-5F-64-65-67-22-3A-2D-30-2E-30-30-31-31-2C-22-6C-65-66-74-5F-72-69-67, "ng_rate_bw_s":-6.4448,"trunk_forward_lean_deg":-0.0011,"left_rig"
+A 23:31:01.965 "(0x) 6E-67-5F-72-61-74-65-5F-62-77-5F-73-22-3A-2D-36-2E-34-34-34-38-2C-22-74-72-75-6E-6B-5F-66-6F-72-77-61-72-64-5F-6C-65-61-6E-5F-64-65-67-22-3A-2D-30-2E-30-30-31-31-2C-22-6C-65-66-74-5F-72-69-67, "ng_rate_bw_s":-6.4448,"trunk_forward_lean_deg":-0.0011,"left_rig"" received
+I 23:31:02.027 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 68-74-5F-61-73-79-6D-6D-65-74-72-79-5F-70-63-74-22-3A-31-2E-30-31-37-2C-22-68-65-65-6C-5F-73-74-72-69-6B-65-5F-6C-69-6B-65-6C-69-68-6F-6F-64-22-3A-31-33-2E-39-36-31-39-7D-2C-22-64-6F-6D-69-6E, "ht_asymmetry_pct":1.017,"heel_strike_likelihood":13.9619},"domin"
+A 23:31:02.027 "(0x) 68-74-5F-61-73-79-6D-6D-65-74-72-79-5F-70-63-74-22-3A-31-2E-30-31-37-2C-22-68-65-65-6C-5F-73-74-72-69-6B-65-5F-6C-69-6B-65-6C-69-68-6F-6F-64-22-3A-31-33-2E-39-36-31

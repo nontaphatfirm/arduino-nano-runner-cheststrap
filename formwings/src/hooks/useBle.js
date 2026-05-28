@@ -6,6 +6,8 @@ const STALE_MS     = 5000;  // no data for 5 s → stale (packets arrive ~2 s ap
 const RECONNECT_MS = 5000;  // retry interval after disconnect
 const RECENT_LOG_LINES = 20;
 const MAX_LOG_LINES = 50000;
+const MAX_BUFFER_CHARS = 12000;
+const PREDICTION_START = '{"type":"running_form_prediction"';
 
 function getBluetoothSupportMessage() {
   if (!window.isSecureContext) {
@@ -18,6 +20,86 @@ function getBluetoothSupportMessage() {
 
   if (!navigator.bluetooth) {
     return "Web Bluetooth is not supported in this browser.\nUse Chrome on Android or Chrome/Edge on desktop.";
+  }
+
+  return null;
+}
+
+function findCompleteJsonEnd(text) {
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  let started = false;
+
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+
+    if (inString) {
+      if (escape) {
+        escape = false;
+      } else if (ch === "\\") {
+        escape = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+    } else if (ch === "{") {
+      depth += 1;
+      started = true;
+    } else if (ch === "}") {
+      depth -= 1;
+      if (started && depth === 0) return i;
+      if (depth < 0) return -1;
+    }
+  }
+
+  return -1;
+}
+
+function tryRepairPartialJson(text) {
+  if (!text.startsWith("{") || !text.includes('"class"')) return null;
+
+  const candidates = [`${text}}`];
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+
+    if (inString) {
+      if (escape) {
+        escape = false;
+      } else if (ch === "\\") {
+        escape = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+    } else if (ch === "{") {
+      depth += 1;
+    } else if (ch === "}") {
+      depth -= 1;
+    } else if (ch === "," && depth === 1) {
+      candidates.push(`${text.slice(0, i)}}`);
+    }
+  }
+
+  for (let i = candidates.length - 1; i >= 0; i -= 1) {
+    try {
+      JSON.parse(candidates[i]);
+      return candidates[i];
+    } catch {
+      // Try the next earlier top-level field boundary.
+    }
   }
 
   return null;
@@ -38,6 +120,7 @@ export function useBle() {
   const logRef      = useRef([]);
   const bleBuffer   = useRef("");        // fallback: raw byte accumulator
   const bleFrames   = useRef(new Map()); // framing protocol: msgId → {chunks, totalChunks}
+  const lastPartial = useRef("");
 
   // ── helpers ───────────────────────────────────────────────────────────────
 
@@ -67,6 +150,51 @@ export function useBle() {
     const raw = parseRaw(json);
     if (raw) setLatest(processor.current.process(raw));
   }, [appendLogLine]);
+
+  const consumeBufferedJson = useCallback(() => {
+    let buf = bleBuffer.current;
+    const start = buf.indexOf("{");
+    if (start === -1) {
+      if (buf.length > MAX_BUFFER_CHARS) bleBuffer.current = "";
+      return;
+    }
+
+    if (start > 0) {
+      buf = buf.slice(start);
+      bleBuffer.current = buf;
+    }
+
+    const completeEnd = findCompleteJsonEnd(buf);
+    if (completeEnd >= 0) {
+      const candidate = buf.slice(0, completeEnd + 1);
+      try {
+        JSON.parse(candidate);
+        bleBuffer.current = buf.slice(completeEnd + 1);
+        lastPartial.current = "";
+        dispatchJson(candidate);
+        return;
+      } catch {
+        // Keep buffering; a later notification may make the stream recoverable.
+      }
+    }
+
+    const nextPrediction = buf.indexOf(PREDICTION_START, 1);
+    const repairSource = nextPrediction > 0 ? buf.slice(0, nextPrediction) : buf;
+    const repaired = tryRepairPartialJson(repairSource);
+    if (repaired && repaired !== lastPartial.current) {
+      lastPartial.current = repaired;
+      dispatchJson(repaired);
+    }
+
+    if (nextPrediction > 0) {
+      bleBuffer.current = buf.slice(nextPrediction);
+      lastPartial.current = "";
+    } else if (buf.length > MAX_BUFFER_CHARS) {
+      const keepFrom = Math.max(0, buf.lastIndexOf(PREDICTION_START));
+      bleBuffer.current = keepFrom > 0 ? buf.slice(keepFrom) : "";
+      lastPartial.current = "";
+    }
+  }, [dispatchJson]);
 
   const subscribeChar = useCallback(async (char) => {
     bleBuffer.current = "";
@@ -108,19 +236,11 @@ export function useBle() {
       } else {
         // Fallback for unframed streams (legacy / unknown format)
         bleBuffer.current += pkt;
-        if (bleBuffer.current.length > 8000) { bleBuffer.current = ""; return; }
-        const buf   = bleBuffer.current;
-        const start = buf.indexOf("{");
-        const end   = buf.lastIndexOf("}");
-        if (start === -1 || end <= start) return;
-        const candidate = buf.slice(start, end + 1);
-        try { JSON.parse(candidate); } catch { return; }
-        bleBuffer.current = buf.slice(end + 1);
-        dispatchJson(candidate);
+        consumeBufferedJson();
       }
     });
     await char.startNotifications();
-  }, [appendLogLine, armStaleTimer, dispatchJson]);
+  }, [armStaleTimer, consumeBufferedJson, dispatchJson]);
 
   const tryReconnect = useCallback(async () => {
     clearTimeout(reconnTimer.current);
@@ -184,6 +304,7 @@ export function useBle() {
     processor.current.reset();
     bleBuffer.current = "";
     bleFrames.current.clear();
+    lastPartial.current = "";
     if (deviceRef.current?.gatt?.connected) {
       deviceRef.current.gatt.disconnect();
     }

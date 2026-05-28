@@ -61,7 +61,7 @@ export function parsePrediction(text) {
     // Sensor errors (status !== "ok") always warrant a banner regardless of risk level.
     // Routine warm/humid WARN messages are NOT bannered — they describe normal Thailand
     // conditions and would cause alert fatigue. Only CRIT triggers the banner.
-    const isSensorError = env?.status !== "ok";
+    const isSensorError = Boolean(env && env.status !== "ok");
     const showBanner    = recSeverity === "CRIT" || isSensorError;
 
     const envAlert = showBanner
