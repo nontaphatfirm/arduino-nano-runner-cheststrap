@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { SERVICE_UUID, CHAR_UUID, DEVICE_NAME, parseRaw, parsePrediction } from "../lib/bleContract";
 import { ImuProcessor } from "../lib/imuProcessor";
 
-const STALE_MS     = 5000;  // no data for 5 s → stale (packets arrive ~2 s apart in chunks)
+const STALE_MS     = 12000; // no complete prediction for 12 s → stale (firmware may skip BLE windows)
 const RECONNECT_MS = 5000;  // retry interval after disconnect
 const RECENT_LOG_LINES = 20;
 const MAX_LOG_LINES = 50000;
