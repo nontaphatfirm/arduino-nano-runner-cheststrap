@@ -1,0 +1,6 @@
+Thermal conditions look normal.
+Thermal sensor unavailable.
+Thermal reading is stale.
+Warm humid conditions; control pace and hydrate.
+Heat risk elevated; reduce pace and avoid hard intervals.
+Heat risk high; slow down, hydrate, and consider stopping.

@@ -1,64 +1,125 @@
-# Arduino Nano Runner Cheststrap — Project Context
+# FormWings — Agent Context (Repo Root)
 
-## Overview
+> Read this before working on any part of this repository.
 
-A wearable chest-mounted sensor system for runner form analysis.  
-The **Arduino Nano 33 BLE Sense Rev1** streams 9-axis IMU data and analog sound at 20 Hz over USB Serial to a Web Serial dashboard.
+## What This Project Is
 
-See `HARDWARE.md` for all sensor specs, wiring, sampling rates, limitations, and I²C addresses.  
-See `hardware-guide.md` for a beginner-friendly walkthrough of the hardware.
+**FormWings** is a wearable running form analysis system built for a Thai hackathon (Super AI Engineer Season 6). A chest-strap Arduino Nano 33 BLE Sense streams IMU data to an Arduino UNO Q, which runs a lightweight Time-Series Transformer model and sends biomechanical predictions over BLE to a React mobile web app.
 
----
-
-## What We're Measuring
-
-| Signal | Sensor | Insight |
-|--------|--------|---------|
-| Acceleration (XYZ) | LSM9DS1 (built-in IMU) | Impact, vertical oscillation, trunk lean |
-| Rotation rate (XYZ) | LSM9DS1 gyroscope | Roll, pitch, yaw / cadence |
-| Magnetic heading | LSM9DS1 magnetometer | Absolute orientation reference |
-| Sound | OJFF14 analog sensor → A7 | Ambient noise, step rhythm |
-| Visual capture | OV7675 (Tiny ML Shield) | Keyframe image on demand |
+**Live dashboard:** https://formwings.vercel.app  
+**Demo deadline:** 2026-05-29
 
 ---
 
-## System Flow
+## Repository Layout
 
 ```
-Input → Processing → Dashboard → Feedback
+arduino/                         ← repo root
+├── CLAUDE.md                    ← project context for Claude Code
+├── AGENTS.md                    ← this file
+├── HARDWARE.md                  ← sensor specs, wiring, I²C addresses
+├── hardware-guide.md            ← beginner-friendly hardware walkthrough
+├── sensors-test/                ← Arduino sketches (Nano 33 BLE Sense)
+│   ├── sensors_test/
+│   │   └── sensors_test.ino    ← primary sketch, streams JSON at 20 Hz
+│   └── dashboard.html          ← legacy Web Serial dashboard
+├── formwings/                   ← React mobile dashboard (PRIMARY)
+│   ├── AGENT.md                 ← detailed agent context for formwings
+│   ├── CHANGELOG.md             ← version history
+│   ├── METRICS.md               ← metric definitions, ranges, calculations
+│   ├── SPEC.md                  ← product specification
+│   ├── Dataset/                 ← labelled IMU training data
+│   │   ├── Goodform/
+│   │   ├── Badform/
+│   │   └── DATA_DICTIONARY.md
+│   └── src/                    ← React source
+└── FormSense/                   ← older prototype (archived)
 ```
 
-| Step | Implementation |
-|------|----------------|
-| Input | LSM9DS1 (accel + gyro + mag) + OJFF14 sound → Nano 33 BLE Sense |
-| Processing | Dead-reckoning: accel → velocity → position; step peaks → cadence |
-| Dashboard | Live charts, 3D position, orientation, sound level via Web Serial |
-| Feedback | Visual cues in dashboard (lean alert, bounce threshold) |
+**Always work in `formwings/` for dashboard changes.** `FormSense/` and `FormSense-v2/` are archived.
 
 ---
 
-## Available Hardware (Arduino Plug and Make Kit)
+## System Architecture
 
-These Modulino modules connect to **Arduino UNO Q** via Qwiic (`Wire1`):
+```
+[Arduino Nano 33 BLE Sense Rev1]   — waistband / sacrum
+  LSM9DS1 9-axis IMU at 200 Hz
+  → USB Serial (JSON frames at 20 Hz)
+        ↓
+[Arduino UNO Q]                    — belt / pocket
+  Digital filtering (Madgwick, Butterworth)
+  Feature extraction (7 biomechanical metrics)
+  Lightweight Time-Series Transformer
+  Rule-based alert engine
+  Modulino THERMO (temperature / humidity)
+  → BLE GATT notify (~1 Hz prediction windows)
+        ↓
+[formwings mobile web app]         — runner's phone
+  Web Bluetooth → 3-page dashboard
+  → (planned) Supabase upload
+```
+
+---
+
+## BLE Data Contract
+
+**Incoming packet type:** `running_form_prediction`
+
+Key fields consumed by the dashboard (see `formwings/src/lib/bleContract.js`):
+
+| Field path | Dashboard key | Notes |
+|---|---|---|
+| `features.cadence_spm` | `c` | spm |
+| `features.vertical_oscillation_cm` | `vo` | cm |
+| `diagnostics.gct_ms` | `gct` | ms — raw ground contact time |
+| `features.impact_loading_rate_bw_s` | `vgrf` | BW/s — loading rate (primary) |
+| `diagnostics.peak_vgrf_bw_estimate` | `vgrf2` | ×BW — peak force (secondary) |
+| `features.trunk_forward_lean_deg` | `lean` | degrees |
+| `features.left_right_asymmetry_pct` | `asym` | % |
+| `features.heel_strike_likelihood` | `heelLikelihood` | 0–1 |
+| `class` | `form` | 0=Good, 1=Bad |
+| `dominant_feature` | `dominantFeature` | key string |
+| `feature_contributions` | `featureContributions` | SHAP-like logit values |
+| `diagnostics.fallback_window` + `detected_step_events` | `fallback` | bool — data quality |
+| `environment.*` | `envData` | always stored |
+| `recommendation.severity` | `envAlert` | banner only when CRIT or sensor error |
+
+Legacy raw IMU format (`acc_x_g`, `gyro_x_dps`, …) is also handled via `parseRaw()` + `ImuProcessor` (client-side processing fallback).
+
+---
+
+## Hardware Quick Reference
+
+### Arduino Nano 33 BLE Sense Rev1
+
+| Property | Value |
+|----------|-------|
+| SKU | ABX00031 |
+| Sensor | LSM9DS1 (accel ±4g, gyro ±2000 dps, mag) |
+| Processor | nRF52480 Cortex-M4F @ 64 MHz |
+| Flash / RAM | 1 MB / 256 KB |
+| I/O voltage | **3.3V only — NOT 5V tolerant** |
+| USB ids | idVendor 0x2341 / idProduct 0x805A |
+
+### Arduino UNO Q — Modulino modules (Qwiic / Wire1)
 
 | Module | I²C Address | Function |
 |--------|-------------|----------|
-| DISTANCE | 0x29 | ToF laser range: 0–1200 mm |
-| THERMO | 0x44 | Temperature ±0.25°C / Humidity ±2.8% |
+| DISTANCE | 0x29 | ToF laser range 0–1200 mm |
+| THERMO | 0x44 | Temp ±0.25°C / Humidity ±2.8% |
 | MOVEMENT | 0x6A | 6-axis IMU (LSM6DSOXTR) |
 | PIXELS | 0x6C | 8× RGB LEDs |
 | BUZZER | 0x3C | Passive buzzer 31–4186 Hz |
 | KNOB | 0x76 | Rotary encoder |
 | BUTTONS | 0x7C | 3× tactile buttons |
 
-Always use the **Modulino Library Address** in code (not the hardware scan address).
+Always use **Modulino Library Address** in code (not the hardware scan address).
 
----
-
-## Library Dependencies
+### Arduino Library Dependencies
 
 ```
-Arduino_LSM9DS1              — Nano 33 BLE Sense Rev1 IMU (Rev2: Arduino_BMI270_BMM150)
+Arduino_LSM9DS1              — Nano 33 BLE Sense Rev1 IMU
 Arduino_Modulino  v0.7.0    — all Modulino modules (UNO Q)
 MsgPack           v0.4.2    — required by Modulino
 Arduino_RouterBridge         — Monitor.print on UNO Q
@@ -67,28 +128,24 @@ WiFi (built-in)              — UNO Q WiFi
 
 ---
 
-## Main Code
+## formwings Dashboard Quick Reference
 
-```
-sensors-test/
-├── sensors_test/
-│   └── sensors_test.ino   ← primary sketch — streams JSON at 20 Hz
-└── dashboard.html          ← Web Serial dashboard (Chrome / Edge)
-```
+**Deploy:** `cd formwings && vercel --prod`  
+**Dev:** `npm run dev` → http://localhost:5173  
+**Dev HTTPS (required for Android BLE):** `npm run dev:https`  
 
-Sketch targets **Rev1** by default (`SENSOR_BOARD_REV 1`).  
-Set to `2` and install `Arduino_BMI270_BMM150` for Rev2.
+Key files:
 
----
-
-## Board Identification
-
-| Property | Value |
-|----------|-------|
-| SKU | ABX00031 |
-| USB idVendor | 0x2341 (Arduino) |
-| USB idProduct | 0x805A |
-| USB bcdDevice | 0x0101 (Rev1) |
-| Processor | nRF52480 Cortex-M4F @ 64 MHz |
-| Flash / RAM | 1 MB / 256 KB |
-| I/O voltage | 3.3V only — NOT 5V tolerant |
+| File | Role |
+|------|------|
+| `src/lib/bleContract.js` | BLE UUIDs + `parsePrediction()` + `parseRaw()` + `hintFromCode()` |
+| `src/lib/simulator.js` | Demo data generator (fatigue model, calibrated to real payload) |
+| `src/lib/classify.js` | Threshold fallback classifier + `badReason()` |
+| `src/hooks/useBle.js` | Web Bluetooth, reconnect, stale timer, dual-format parsing |
+| `src/hooks/useSession.js` | Elapsed, distance, history (last 60), fullHistory (all packets) |
+| `src/screens/Dashboard.jsx` | 3-page swipeable layout + form score + env alert |
+| `src/screens/Summary.jsx` | Session summary + rolling average charts + PDF export |
+| `src/components/PostureArc.jsx` | Animated SVG running figure, pauses when BLE inactive |
+| `src/components/MetricStrip.jsx` | Full-screen 7-metric telemetry page |
+| `METRICS.md` | Metric definitions, sensor, calculation, ranges, caveats |
+| `Dataset/DATA_DICTIONARY.md` | Raw IMU dataset field descriptions and value ranges |

@@ -1,0 +1,88 @@
+nRF Connect, 2026-05-28
+FROMWiNGs (14:B5:CD:F0:7C:39)
+V 22:53:27.709 Connecting to 14:B5:CD:F0:7C:39...
+D 22:53:27.709 gatt = device.connectGatt(autoConnect = false, TRANSPORT_LE, preferred PHY = LE 1M)
+D 22:53:28.108 [Callback] Connection state changed with status: 0 and new state: CONNECTED (2)
+I 22:53:28.108 Connected to 14:B5:CD:F0:7C:39
+V 22:53:28.109 Discovering services...
+D 22:53:28.109 gatt.discoverServices()
+D 22:53:28.146 [Broadcast] Action received: android.bluetooth.device.action.ACL_CONNECTED
+I 22:53:28.532 Connection parameters updated (interval: 7.5ms, latency: 0, timeout: 5000ms)
+D 22:53:28.934 [Callback] Services discovered with status: 0
+I 22:53:28.934 Services discovered
+V 22:53:28.937 Generic Access (0x1800)
+- Device Name [R] (0x2A00)
+- Appearance [R] (0x2A01)
+Generic Attribute (0x1801)
+- Service Changed [I] (0x2A05)
+   Client Characteristic Configuration (0x2902)
+Unknown Service (19b10000-e8f2-537e-4f6c-d104768a1214)
+- Unknown Characteristic [N R] (19b10001-e8f2-537e-4f6c-d104768a1214)
+   Client Characteristic Configuration (0x2902)
+D 22:53:28.937 gatt.setCharacteristicNotification(00002a05-0000-1000-8000-00805f9b34fb, true)
+D 22:53:28.940 gatt.setCharacteristicNotification(19b10001-e8f2-537e-4f6c-d104768a1214, true)
+I 22:53:28.957 PHY updated (TX: LE 2M, RX: LE 2M)
+I 22:53:29.074 Connection parameters updated (interval: 30.0ms, latency: 0, timeout: 5000ms)
+V 22:53:33.485 Enabling notifications for 19b10001-e8f2-537e-4f6c-d104768a1214
+D 22:53:33.485 gatt.setCharacteristicNotification(19b10001-e8f2-537e-4f6c-d104768a1214, true)
+D 22:53:33.487 gatt.writeDescriptor(00002902-0000-1000-8000-00805f9b34fb, value=0x0100)
+I 22:53:33.539 Data written to descr. 00002902-0000-1000-8000-00805f9b34fb, value: (0x) 01-00
+A 22:53:33.539 "Notifications enabled" sent
+V 22:53:33.542 Notifications enabled for 19b10001-e8f2-537e-4f6c-d104768a1214
+I 22:53:37.560 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 5E-36-33-36-64-31-33-66-35-31-65-38-66-61-62, "^636d13f51e8fab"
+A 22:53:37.560 "(0x) 5E-36-33-36-64-31-33-66-35-31-65-38-66-61-62, "^636d13f51e8fab"" received
+I 22:53:37.590 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-33-36-64-30-30-7B-22-74-79-70-65-22-3A-22-72-75-6E-6E, ":636d00{"type":"runn"
+A 22:53:37.590 "(0x) 3A-36-33-36-64-30-30-7B-22-74-79-70-65-22-3A-22-72-75-6E-6E, ":636d00{"type":"runn"" received
+I 22:53:37.630 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-33-36-64-30-31-70-5F-73-22-3A-31-39-30-33-2E-37-35-33, ":636d01p_s":1903.753"
+A 22:53:37.630 "(0x) 3A-36-33-36-64-30-31-70-5F-73-22-3A-31-39-30-33-2E-37-35-33, ":636d01p_s":1903.753"" received
+I 22:53:37.648 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-33-36-64-30-32-63-69-6C-6C-61-74-69-6F-6E-5F-63-6D-22, ":636d02cillation_cm""
+A 22:53:37.648 "(0x) 3A-36-33-36-64-30-32-63-69-6C-6C-61-74-69-6F-6E-5F-63-6D-22, ":636d02cillation_cm""" received
+I 22:53:37.803 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-33-36-64-30-33-61-64-69-6E-67-5F-72-61-74-65-5F-62-77, ":636d03ading_rate_bw"
+A 22:53:37.803 "(0x) 3A-36-33-36-64-30-33-61-64-69-6E-67-5F-72-61-74-65-5F-62-77, ":636d03ading_rate_bw"" received
+I 22:53:37.859 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-33-36-64-30-34-74-5F-72-69-67-68-74-5F-61-73-79-6D-6D, ":636d04t_right_asymm"
+A 22:53:37.859 "(0x) 3A-36-33-36-64-30-34-74-5F-72-69-67-68-74-5F-61-73-79-6D-6D, ":636d04t_right_asymm"" received
+I 22:53:37.888 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-33-36-64-30-35-2C-22-64-69-61-67-6E-6F-73-74-69-63-73, ":636d05,"diagnostics"
+A 22:53:37.888 "(0x) 3A-36-33-36-64-30-35-2C-22-64-69-61-67-6E-6F-73-74-69-63-73, ":636d05,"diagnostics"" received
+I 22:53:37.958 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-33-36-64-30-36-67-72-66-5F-62-77-5F-65-73-74-69-6D-61, ":636d06grf_bw_estima"
+A 22:53:37.958 "(0x) 3A-36-33-36-64-30-36-67-72-66-5F-62-77-5F-65-73-74-69-6D-61, ":636d06grf_bw_estima"" received
+I 22:53:38.008 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-33-36-64-30-37-6C-6C-62-61-63-6B-5F-77-69-6E-64-6F-77, ":636d07llback_window"
+A 22:53:38.008 "(0x) 3A-36-33-36-64-30-37-6C-6C-62-61-63-6B-5F-77-69-6E-64-6F-77, ":636d07llback_window"" received
+I 22:53:38.038 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-33-36-64-30-38-61-64-20-46-6F-72-6D-22-2C-22-70-72-6F, ":636d08ad Form","pro"
+A 22:53:38.038 "(0x) 3A-36-33-36-64-30-38-61-64-20-46-6F-72-6D-22-2C-22-70-72-6F, ":636d08ad Form","pro"" received
+I 22:53:38.100 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-33-36-64-30-39-22-66-65-61-74-75-72-65-5F-63-6F-6E-74, ":636d09"feature_cont"
+A 22:53:38.100 "(0x) 3A-36-33-36-64-30-39-22-66-65-61-74-75-72-65-5F-63-6F-6E-74, ":636d09"feature_cont"" received
+I 22:53:38.128 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-33-36-64-30-41-6F-73-63-69-6C-6C-61-74-69-6F-6E-5F-63, ":636d0Aoscillation_c"
+A 22:53:38.128 "(0x) 3A-36-33-36-64-30-41-6F-73-63-69-6C-6C-61-74-69-6F-6E-5F-63, ":636d0Aoscillation_c"" received
+I 22:53:38.189 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-33-36-64-30-42-22-69-6D-70-61-63-74-5F-6C-6F-61-64-69, ":636d0B"impact_loadi"
+A 22:53:38.189 "(0x) 3A-36-33-36-64-30-42-22-69-6D-70-61-63-74-5F-6C-6F-61-64-69, ":636d0B"impact_loadi"" received
+I 22:53:38.218 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-33-36-64-30-43-67-22-3A-2D-30-2E-30-30-31-31-2C-22-6C, ":636d0Cg":-0.0011,"l"
+A 22:53:38.218 "(0x) 3A-36-33-36-64-30-43-67-22-3A-2D-30-2E-30-30-31-31-2C-22-6C, ":636d0Cg":-0.0011,"l"" received
+I 22:53:38.280 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-33-36-64-30-44-6C-69-6B-65-6C-69-68-6F-6F-64-22-3A-31, ":636d0Dlikelihood":1"
+A 22:53:38.280 "(0x) 3A-36-33-36-64-30-44-6C-69-6B-65-6C-69-68-6F-6F-64-22-3A-31, ":636d0Dlikelihood":1"" received
+I 22:53:38.309 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-33-36-64-30-45-74-69-6F-6E-5F-63-6D-22-2C-22-65-6E-76, ":636d0Etion_cm","env"
+A 22:53:38.309 "(0x) 3A-36-33-36-64-30-45-74-69-6F-6E-5F-63-6D-22-2C-22-65-6E-76, ":636d0Etion_cm","env"" received
+I 22:53:38.403 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-33-36-64-30-46-32-34-2C-22-68-75-6D-69-64-69-74-79-5F, ":636d0F24,"humidity_"
+A 22:53:38.403 "(0x) 3A-36-33-36-64-30-46-32-34-2C-22-68-75-6D-69-64-69-74-79-5F, ":636d0F24,"humidity_"" received
+I 22:53:38.430 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-33-36-64-31-30-3A-22-4E-6F-72-6D-61-6C-22-2C-22-72-69, ":636d10:"Normal","ri"
+A 22:53:38.430 "(0x) 3A-36-33-36-64-31-30-3A-22-4E-6F-72-6D-61-6C-22-2C-22-72-69, ":636d10:"Normal","ri"" received
+I 22:53:38.460 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-33-36-64-31-31-7B-22-73-65-76-65-72-69-74-79-22-3A-22, ":636d11{"severity":""
+A 22:53:38.460 "(0x) 3A-36-33-36-64-31-31-7B-22-73-65-76-65-72-69-74-79-22-3A-22, ":636d11{"severity":""" received
+I 22:53:38.522 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-33-36-64-31-32-65-72-6D-61-6C-20-63-6F-6E-64-69-74-69, ":636d12ermal conditi"
+A 22:53:38.522 "(0x) 3A-36-33-36-64-31-32-65-72-6D-61-6C-20-63-6F-6E-64-69-74-69, ":636d12ermal conditi"" received
+I 22:53:38.610 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 21-36-33-36-64-31-33, "!636d13"
+A 22:53:38.610 "(0x) 21-36-33-36-64-31-33, "!636d13"" received
+I 22:53:39.866 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 5E-36-63-31-65-31-33-64-31-36-38-64-37-31-66, "^6c1e13d168d71f"
+A 22:53:39.866 "(0x) 5E-36-63-31-65-31-33-64-31-36-38-64-37-31-66, "^6c1e13d168d71f"" received
+I 22:53:39.870 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-63-31-65-30-30-7B-22-74-79-70-65-22-3A-22-72-75-6E-6E, ":6c1e00{"type":"runn"
+A 22:53:39.870 "(0x) 3A-36-63-31-65-30-30-7B-22-74-79-70-65-22-3A-22-72-75-6E-6E, ":6c1e00{"type":"runn"" received
+I 22:53:39.929 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-63-31-65-30-31-70-5F-73-22-3A-31-39-30-36-2E-30-34-32, ":6c1e01p_s":1906.042"
+A 22:53:39.929 "(0x) 3A-36-63-31-65-30-31-70-5F-73-22-3A-31-39-30-36-2E-30-34-32, ":6c1e01p_s":1906.042"" received
+I 22:53:39.960 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-63-31-65-30-32-63-69-6C-6C-61-74-69-6F-6E-5F-63-6D-22, ":6c1e02cillation_cm""
+A 22:53:39.960 "(0x) 3A-36-63-31-65-30-32-63-69-6C-6C-61-74-69-6F-6E-5F-63-6D-22, ":6c1e02cillation_cm""" received
+I 22:53:40.020 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-63-31-65-30-33-61-64-69-6E-67-5F-72-61-74-65-5F-62-77, ":6c1e03ading_rate_bw"
+A 22:53:40.020 "(0x) 3A-36-63-31-65-30-33-61-64-69-6E-67-5F-72-61-74-65-5F-62-77, ":6c1e03ading_rate_bw"" received
+I 22:53:40.079 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-63-31-65-30-34-74-5F-72-69-67-68-74-5F-61-73-79-6D-6D, ":6c1e04t_right_asymm"
+A 22:53:40.079 "(0x) 3A-36-63-31-65-30-34-74-5F-72-69-67-68-74-5F-61-73-79-6D-6D, ":6c1e04t_right_asymm"" received
+I 22:53:40.109 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-63-31-65-30-35-2C-22-64-69-61-67-6E-6F-73-74-69-63-73, ":6c1e05,"diagnostics"
+A 22:53:40.109 "(0x) 3A-36-63-31-65-30-35-2C-22-64-69-61-67-6E-6F-73-74-69-63-73, ":6c1e05,"diagnostics"" received
+I 22:53:40.172 Notification received from 19b10001-e8f2-537e-4f6c-d104768a1214, value: (0x) 3A-36-63-31-65-30-36-67-72-66-5F-62-77-5F-65-73-74-69-6D-61, ":6c
